@@ -342,6 +342,10 @@ label {
   text-align: center;
 }
 
+.admin-score-inputs {
+  grid-template-columns: repeat(6, minmax(0, 1fr)) auto;
+}
+
 .leader-row {
   align-items: center;
   background: #fff;
@@ -402,6 +406,10 @@ label {
   }
 
   .score-inputs {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-score-inputs {
     grid-template-columns: 1fr 1fr;
   }
 

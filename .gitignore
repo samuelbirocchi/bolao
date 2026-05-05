@@ -4,6 +4,7 @@
 .next
 .omx
 node_modules
+supabase/.temp/
 tsconfig.tsbuildinfo
 npm-debug.log*
 yarn-debug.log*

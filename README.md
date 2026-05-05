@@ -41,14 +41,22 @@ PWA-first World Cup sweepstakes app for private groups of friends.
    - Set `WC2026_API_KEY`
    - Use `/admin/matches` to sync matches
 
+7. Optional odds sync:
+
+   - Request a key from `https://the-odds-api.com/`
+   - Set `ODDS_API_KEY`
+   - Use `/admin/matches` to sync pre-kickoff odds
+
 ## Scoring
 
 Global admins configure weights in `/admin/scoring`.
 
 Default scoring:
 
-- Exact score: `5`
-- Correct team goals: `1` per team
-- Correct outcome: `2`
+- Correct winner base score: `5` to `20`, based on frozen pre-kickoff win probability
+- Exact score bonus: `5`
+- Non-exact score-shape bonuses: winner goals `3`, goal difference `2`, loser goals `1`
+- Rout bonus: `1`
+- Extra-time or penalties winner bonus: `3`
 
-Exact score uses the exact-score weight as the full match score. Non-exact predictions can earn team-goal and outcome points.
+Exact score does not stack with winner-goals, goal-difference, or loser-goals bonuses. It can still stack with rout and extra-time/penalty bonuses.

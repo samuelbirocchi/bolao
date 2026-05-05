@@ -37,9 +37,11 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
 
       <div className="notice" style={{ marginBottom: "1rem" }}>
         {t.leaderboard.scoring
-          .replace("{exact}", String(scoring.exactScorePoints))
-          .replace("{teamGoal}", String(scoring.teamGoalPoints))
-          .replace("{outcome}", String(scoring.outcomePoints))}
+          .replace("{baseMin}", String(scoring.baseMinPoints))
+          .replace("{baseMax}", String(scoring.baseMaxPoints))
+          .replace("{exact}", String(scoring.exactScoreBonusPoints))
+          .replace("{winnerGoals}", String(scoring.winnerGoalsBonusPoints))
+          .replace("{goalDifference}", String(scoring.goalDifferenceBonusPoints))}
       </div>
 
       {entries.length === 0 ? (
@@ -52,8 +54,9 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
               <div>
                 <strong>{entry.display_name ?? t.leaderboard.player}</strong>
                 <p className="muted">
-                  {t.leaderboard.exact} {entry.exact_score_count} · {t.leaderboard.outcome}{" "}
-                  {entry.outcome_count} · {t.leaderboard.teamGoals} {entry.team_goal_count}
+                  {t.leaderboard.base} {entry.base_points} · {t.leaderboard.bonus}{" "}
+                  {entry.bonus_points} · {t.leaderboard.exact} {entry.exact_score_count} ·{" "}
+                  {t.leaderboard.winners} {entry.winner_count}
                 </p>
               </div>
               <span className="points">{entry.total_points}</span>

@@ -11,6 +11,21 @@ type MatchesPageProps = {
   params: Promise<{ groupId: string }>;
 };
 
+function formatResolution(
+  resolution: string | null,
+  labels: { afterExtraTime: string; onPenalties: string },
+) {
+  if (resolution === "extra_time") {
+    return labels.afterExtraTime;
+  }
+
+  if (resolution === "penalties") {
+    return labels.onPenalties;
+  }
+
+  return null;
+}
+
 export default async function MatchesPage({ params }: MatchesPageProps) {
   const { user } = await requireUser();
   const { groupId } = await params;
@@ -75,6 +90,14 @@ export default async function MatchesPage({ params }: MatchesPageProps) {
                 {match.result_home_goals !== null && match.result_away_goals !== null ? (
                   <div className="notice">
                     {t.matches.result}: {match.result_home_goals} x {match.result_away_goals}
+                    {match.result_resolution === "penalties" &&
+                    match.result_home_penalties !== null &&
+                    match.result_away_penalties !== null
+                      ? ` (${match.result_home_penalties} x ${match.result_away_penalties} ${t.matches.penaltiesShort})`
+                      : ""}
+                    {formatResolution(match.result_resolution, t.matches)
+                      ? ` ${formatResolution(match.result_resolution, t.matches)}`
+                      : ""}
                   </div>
                 ) : null}
 
