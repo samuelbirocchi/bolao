@@ -2,6 +2,18 @@
 
 PWA-first World Cup sweepstakes app for private groups of friends.
 
+## Features
+
+- Private invite-only groups
+- Email magic-link authentication
+- Match predictions locked at kickoff
+- Global admin match/result management
+- WC2026 fixture sync
+- The Odds API pre-kickoff odds snapshots
+- Configurable probability-based scoring
+- English, Portuguese, and Spanish UI
+- Installable PWA shell
+
 ## Stack
 
 - Next.js App Router
@@ -25,7 +37,23 @@ PWA-first World Cup sweepstakes app for private groups of friends.
 
 3. Fill `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 
-4. Run `supabase/migrations/001_initial_schema.sql` in Supabase.
+4. Apply Supabase migrations in order.
+
+   With the Supabase CLI:
+
+   ```bash
+   supabase link --project-ref '<project-ref>'
+   supabase db push
+   ```
+
+   Or run the SQL files in `supabase/migrations/` manually in order.
+
+   If `001_initial_schema.sql` was already applied manually before the CLI tracked
+   it, mark it as applied before running future pushes:
+
+   ```bash
+   supabase migration repair 001 --status applied
+   ```
 
 5. Make your first admin after signing in:
 
@@ -39,13 +67,37 @@ PWA-first World Cup sweepstakes app for private groups of friends.
 
    - Request a key from `https://www.wc2026api.com/`
    - Set `WC2026_API_KEY`
-   - Use `/admin/matches` to sync matches
+   - Use `/admin/matches` to sync matches, phases, extra-time state, and penalties
 
 7. Optional odds sync:
 
    - Request a key from `https://the-odds-api.com/`
    - Set `ODDS_API_KEY`
-   - Use `/admin/matches` to sync pre-kickoff odds
+   - Optionally set `ODDS_API_REGIONS` or `ODDS_API_BOOKMAKERS`
+   - Use `/admin/matches` to sync frozen pre-kickoff odds
+
+8. Run the app:
+
+   ```bash
+   npm run dev
+   ```
+
+## Environment
+
+Required:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+Optional:
+
+- `NEXT_PUBLIC_SITE_URL`
+- `WC2026_API_KEY`
+- `WC2026_API_BASE_URL`
+- `ODDS_API_KEY`
+- `ODDS_API_BASE_URL`
+- `ODDS_API_REGIONS`
+- `ODDS_API_BOOKMAKERS`
 
 ## Scoring
 
@@ -60,3 +112,26 @@ Default scoring:
 - Extra-time or penalties winner bonus: `3`
 
 Exact score does not stack with winner-goals, goal-difference, or loser-goals bonuses. It can still stack with rout and extra-time/penalty bonuses.
+
+Base points use the frozen pre-kickoff probability of the picked winner. If odds
+are missing for a match, a correct winner falls back to the minimum base score.
+Draw predictions do not pick a winner and cannot earn winner/base/extra-time
+points.
+
+## Admin Workflow
+
+1. Sign in and mark your profile as a global admin.
+2. Open `/admin/matches`.
+3. Sync WC2026 fixtures.
+4. Sync odds before matches start.
+5. Enter or sync final scores, resolution, and penalty shootout scores.
+6. Tune scoring weights in `/admin/scoring`.
+
+## Verification
+
+```bash
+npm test
+npm run typecheck
+npm run lint
+npm run build
+```
