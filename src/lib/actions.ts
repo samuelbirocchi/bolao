@@ -235,6 +235,11 @@ export async function updateScoringSettingsAction(formData: FormData) {
   const baseMaxPoints = readInteger(formData, "baseMaxPoints");
   const baseFloorProbability = readProbability(formData, "baseFloorProbability");
   const baseCeilingProbability = readProbability(formData, "baseCeilingProbability");
+
+  if (baseFloorProbability === baseCeilingProbability) {
+    throw new Error("Base probability thresholds must be different.");
+  }
+
   const exactScoreBonusPoints = readInteger(formData, "exactScoreBonusPoints");
   const winnerGoalsBonusPoints = readInteger(formData, "winnerGoalsBonusPoints");
   const goalDifferenceBonusPoints = readInteger(formData, "goalDifferenceBonusPoints");

@@ -56,6 +56,19 @@ add column if not exists extra_time_bonus_points integer not null default 3
 add column if not exists penalties_bonus_points integer not null default 3
   check (penalties_bonus_points >= 0);
 
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'scoring_settings_probability_thresholds_different'
+  ) then
+    alter table public.scoring_settings
+    add constraint scoring_settings_probability_thresholds_different
+    check (base_floor_probability <> base_ceiling_probability);
+  end if;
+end;
+$$;
+
 alter table public.match_odds_snapshots enable row level security;
 
 do $$

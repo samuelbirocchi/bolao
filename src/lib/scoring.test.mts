@@ -13,6 +13,14 @@ test("probability base score is linear, rounded, and clamped", () => {
   assert.equal(calculateBasePoints(0.05, defaultScoreWeights), 20);
   assert.equal(calculateBasePoints(0.95, defaultScoreWeights), 5);
   assert.equal(calculateBasePoints(null, defaultScoreWeights), 5);
+  assert.equal(
+    calculateBasePoints(0.5, {
+      ...defaultScoreWeights,
+      baseFloorProbability: 0.5,
+      baseCeilingProbability: 0.5,
+    }),
+    5,
+  );
 });
 
 test("exact score blocks winner goals, goal difference, and loser goals bonuses", () => {

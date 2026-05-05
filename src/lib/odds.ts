@@ -142,19 +142,36 @@ export function aggregateEventProbabilities(event: OddsEvent) {
   };
 }
 
-function findMatchingEvent(match: MatchForOdds, events: OddsEvent[]) {
+type MatchedOddsEvent = {
+  event: OddsEvent;
+  reversed: boolean;
+};
+
+function findMatchingEvent(match: MatchForOdds, events: OddsEvent[]): MatchedOddsEvent | null {
   const homeName = normalizeName(match.home_team_name);
   const awayName = normalizeName(match.away_team_name);
   const kickoffTime = new Date(match.kickoff_utc).getTime();
 
-  return events.find((event) => {
+  for (const event of events) {
     const eventHomeName = normalizeName(event.home_team);
     const eventAwayName = normalizeName(event.away_team);
     const eventTime = new Date(event.commence_time).getTime();
     const withinOneDay = Math.abs(eventTime - kickoffTime) <= 24 * 60 * 60 * 1000;
 
-    return eventHomeName === homeName && eventAwayName === awayName && withinOneDay;
-  });
+    if (!withinOneDay) {
+      continue;
+    }
+
+    if (eventHomeName === homeName && eventAwayName === awayName) {
+      return { event, reversed: false };
+    }
+
+    if (eventHomeName === awayName && eventAwayName === homeName) {
+      return { event, reversed: true };
+    }
+  }
+
+  return null;
 }
 
 export function buildOddsSnapshots(matches: MatchForOdds[], events: OddsEvent[]): OddsSnapshot[] {
@@ -162,22 +179,29 @@ export function buildOddsSnapshots(matches: MatchForOdds[], events: OddsEvent[])
 
   return matches
     .map((match) => {
-      const event = findMatchingEvent(match, events);
-      const probabilities = event ? aggregateEventProbabilities(event) : null;
+      const matchEvent = findMatchingEvent(match, events);
+      const probabilities = matchEvent ? aggregateEventProbabilities(matchEvent.event) : null;
 
-      if (!event || !probabilities) {
+      if (!matchEvent || !probabilities) {
         return null;
       }
 
+      const homeWinProbability = matchEvent.reversed
+        ? probabilities.awayWinProbability
+        : probabilities.homeWinProbability;
+      const awayWinProbability = matchEvent.reversed
+        ? probabilities.homeWinProbability
+        : probabilities.awayWinProbability;
+
       return {
         matchId: match.id,
-        oddsEventId: event.id,
+        oddsEventId: matchEvent.event.id,
         source: "the-odds-api",
         bookmakerCount: probabilities.bookmakerCount,
         capturedAt,
-        homeWinProbability: probabilities.homeWinProbability,
+        homeWinProbability,
         drawProbability: probabilities.drawProbability,
-        awayWinProbability: probabilities.awayWinProbability,
+        awayWinProbability,
       };
     })
     .filter(Boolean) as OddsSnapshot[];
