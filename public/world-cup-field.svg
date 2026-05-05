@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" role="img" aria-label="Football field">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#1b8b68"/>
+      <stop offset="1" stop-color="#10382d"/>
+    </linearGradient>
+    <pattern id="stripe" width="140" height="900" patternUnits="userSpaceOnUse">
+      <rect width="70" height="900" fill="#19795c"/>
+      <rect x="70" width="70" height="900" fill="#218d6b"/>
+    </pattern>
+  </defs>
+  <rect width="1400" height="900" fill="url(#sky)"/>
+  <rect y="220" width="1400" height="680" fill="url(#stripe)" opacity=".86"/>
+  <g fill="none" stroke="#eef7f0" stroke-width="8" opacity=".72">
+    <rect x="90" y="270" width="1220" height="560"/>
+    <line x1="700" y1="270" x2="700" y2="830"/>
+    <circle cx="700" cy="550" r="105"/>
+    <rect x="90" y="405" width="175" height="290"/>
+    <rect x="1135" y="405" width="175" height="290"/>
+    <rect x="90" y="475" width="70" height="150"/>
+    <rect x="1240" y="475" width="70" height="150"/>
+  </g>
+  <g opacity=".28">
+    <circle cx="260" cy="155" r="70" fill="#f2c84b"/>
+    <circle cx="1040" cy="170" r="110" fill="#ffffff"/>
+    <circle cx="1160" cy="140" r="82" fill="#ffffff"/>
+    <circle cx="950" cy="145" r="75" fill="#ffffff"/>
+  </g>
+</svg>
