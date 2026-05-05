@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getGroupDetail, getLeaderboard, getScoringSettings } from "@/lib/data";
+import { getDictionary } from "@/lib/i18n/server";
 
 type LeaderboardPageProps = {
   params: Promise<{ groupId: string }>;
@@ -10,10 +11,11 @@ type LeaderboardPageProps = {
 export default async function LeaderboardPage({ params }: LeaderboardPageProps) {
   const { user } = await requireUser();
   const { groupId } = await params;
-  const [group, entries, scoring] = await Promise.all([
+  const [group, entries, scoring, t] = await Promise.all([
     getGroupDetail(groupId, user.id),
     getLeaderboard(groupId),
     getScoringSettings(),
+    getDictionary(),
   ]);
 
   if (!group) {
@@ -24,32 +26,34 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
     <main className="page">
       <div className="page-title">
         <p>{group.name}</p>
-        <h1>Leaderboard</h1>
+        <h1>{t.leaderboard.title}</h1>
       </div>
 
       <div className="tabs">
-        <Link href={`/groups/${group.id}`}>Overview</Link>
-        <Link href={`/groups/${group.id}/matches`}>Matches</Link>
-        <Link href={`/groups/${group.id}/leaderboard`}>Leaderboard</Link>
+        <Link href={`/groups/${group.id}`}>{t.group.overview}</Link>
+        <Link href={`/groups/${group.id}/matches`}>{t.group.matches}</Link>
+        <Link href={`/groups/${group.id}/leaderboard`}>{t.group.leaderboard}</Link>
       </div>
 
       <div className="notice" style={{ marginBottom: "1rem" }}>
-        Scoring: exact {scoring.exactScorePoints}, team goal {scoring.teamGoalPoints}, outcome{" "}
-        {scoring.outcomePoints}. Changes recalculate every completed match.
+        {t.leaderboard.scoring
+          .replace("{exact}", String(scoring.exactScorePoints))
+          .replace("{teamGoal}", String(scoring.teamGoalPoints))
+          .replace("{outcome}", String(scoring.outcomePoints))}
       </div>
 
       {entries.length === 0 ? (
-        <div className="empty">No players are ranked yet.</div>
+        <div className="empty">{t.leaderboard.empty}</div>
       ) : (
         <section className="leaderboard">
           {entries.map((entry, index) => (
             <article className="leader-row" key={entry.user_id}>
               <span className="rank">{index + 1}</span>
               <div>
-                <strong>{entry.display_name ?? "Player"}</strong>
+                <strong>{entry.display_name ?? t.leaderboard.player}</strong>
                 <p className="muted">
-                  Exact {entry.exact_score_count} · Outcome {entry.outcome_count} · Team goals{" "}
-                  {entry.team_goal_count}
+                  {t.leaderboard.exact} {entry.exact_score_count} · {t.leaderboard.outcome}{" "}
+                  {entry.outcome_count} · {t.leaderboard.teamGoals} {entry.team_goal_count}
                 </p>
               </div>
               <span className="points">{entry.total_points}</span>

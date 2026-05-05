@@ -1,45 +1,46 @@
 import { syncMatchesAction, updateMatchResultAction } from "@/lib/actions";
 import { requireGlobalAdmin } from "@/lib/auth";
 import { getAdminMatches } from "@/lib/data";
-import { formatKickoff } from "@/lib/format";
+import { formatKickoffForLocale } from "@/lib/i18n";
+import { getDictionary, getLocale } from "@/lib/i18n/server";
 
 export default async function AdminMatchesPage() {
   await requireGlobalAdmin();
-  const matches = await getAdminMatches();
+  const [matches, locale, t] = await Promise.all([getAdminMatches(), getLocale(), getDictionary()]);
 
   return (
     <main className="page">
       <div className="row page-title">
         <div>
-          <h1>Matches</h1>
-          <p>Sync fixtures from the API or manually enter final scores.</p>
+          <h1>{t.adminMatches.title}</h1>
+          <p>{t.adminMatches.description}</p>
         </div>
         <form action={syncMatchesAction}>
-          <button type="submit">Sync WC2026 API</button>
+          <button type="submit">{t.adminMatches.sync}</button>
         </form>
       </div>
 
       {matches.length === 0 ? (
-        <div className="empty">No matches are loaded yet. Sync from the API to start.</div>
+        <div className="empty">{t.adminMatches.empty}</div>
       ) : (
         <section className="match-list">
           {matches.map((match) => (
             <article className="match-card" key={match.id}>
               <div className="row">
                 <span className="muted">
-                  Match {match.match_number} · {match.group_name ?? match.round}
+                  {t.matches.match} {match.match_number} · {match.group_name ?? match.round}
                 </span>
-                <span className="muted">{formatKickoff(match.kickoff_utc)}</span>
+                <span className="muted">{formatKickoffForLocale(match.kickoff_utc, locale)}</span>
               </div>
               <div className="match-title">
                 <span className="team">{match.home_team_name}</span>
-                <span className="muted">vs</span>
+                <span className="muted">{t.matches.versus}</span>
                 <span className="team">{match.away_team_name}</span>
               </div>
               <form className="score-inputs" action={updateMatchResultAction}>
                 <input name="matchId" type="hidden" value={match.id} />
                 <label>
-                  Home goals
+                  {t.adminMatches.homeGoals}
                   <input
                     defaultValue={match.result_home_goals ?? ""}
                     min={0}
@@ -49,7 +50,7 @@ export default async function AdminMatchesPage() {
                   />
                 </label>
                 <label>
-                  Away goals
+                  {t.adminMatches.awayGoals}
                   <input
                     defaultValue={match.result_away_goals ?? ""}
                     min={0}
@@ -58,7 +59,7 @@ export default async function AdminMatchesPage() {
                     type="number"
                   />
                 </label>
-                <button type="submit">Save result</button>
+                <button type="submit">{t.adminMatches.saveResult}</button>
               </form>
             </article>
           ))}
