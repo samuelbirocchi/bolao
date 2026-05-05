@@ -1,23 +1,23 @@
 import Link from "next/link";
 import { SetupNotice } from "@/components/SetupNotice";
+import { getDictionary } from "@/lib/i18n/server";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const t = await getDictionary();
+
   return (
     <main className="page">
       <SetupNotice />
       <section className="hero">
         <div className="hero-content">
-          <h1>World Cup pools without spreadsheet chaos.</h1>
-          <p>
-            Create a private group, invite friends, predict every match score, and let the
-            leaderboard handle the arguments.
-          </p>
+          <h1>{t.home.title}</h1>
+          <p>{t.home.description}</p>
           <div className="row" style={{ justifyContent: "flex-start" }}>
             <Link className="button" href="/login">
-              Start a pool
+              {t.home.startPool}
             </Link>
             <Link className="button secondary" href="/groups">
-              View groups
+              {t.home.viewGroups}
             </Link>
           </div>
         </div>
@@ -25,16 +25,16 @@ export default function HomePage() {
 
       <section className="grid three" style={{ marginTop: "1rem" }}>
         <div className="card">
-          <h2>Invite-only groups</h2>
-          <p className="muted">Each pool has a private code or link for friends.</p>
+          <h2>{t.home.inviteTitle}</h2>
+          <p className="muted">{t.home.inviteDescription}</p>
         </div>
         <div className="card">
-          <h2>Locked predictions</h2>
-          <p className="muted">Score bets stay editable until each match kickoff.</p>
+          <h2>{t.home.lockedTitle}</h2>
+          <p className="muted">{t.home.lockedDescription}</p>
         </div>
         <div className="card">
-          <h2>Configurable scoring</h2>
-          <p className="muted">Global admins can tune exact score, team-goal, and outcome points.</p>
+          <h2>{t.home.scoringTitle}</h2>
+          <p className="muted">{t.home.scoringDescription}</p>
         </div>
       </section>
     </main>

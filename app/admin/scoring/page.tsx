@@ -1,21 +1,22 @@
 import { updateScoringSettingsAction } from "@/lib/actions";
 import { requireGlobalAdmin } from "@/lib/auth";
 import { getScoringSettings } from "@/lib/data";
+import { getDictionary } from "@/lib/i18n/server";
 
 export default async function AdminScoringPage() {
   await requireGlobalAdmin();
-  const scoring = await getScoringSettings();
+  const [scoring, t] = await Promise.all([getScoringSettings(), getDictionary()]);
 
   return (
     <main className="page">
       <div className="page-title">
-        <h1>Scoring</h1>
-        <p>Configure the global weights used by every group leaderboard.</p>
+        <h1>{t.adminScoring.title}</h1>
+        <p>{t.adminScoring.description}</p>
       </div>
 
       <form className="card form-grid" action={updateScoringSettingsAction}>
         <label>
-          Exact score points
+          {t.adminScoring.exactScore}
           <input
             defaultValue={scoring.exactScorePoints}
             min={0}
@@ -25,7 +26,7 @@ export default async function AdminScoringPage() {
           />
         </label>
         <label>
-          Correct team-goal points
+          {t.adminScoring.teamGoal}
           <input
             defaultValue={scoring.teamGoalPoints}
             min={0}
@@ -35,7 +36,7 @@ export default async function AdminScoringPage() {
           />
         </label>
         <label>
-          Correct outcome points
+          {t.adminScoring.outcome}
           <input
             defaultValue={scoring.outcomePoints}
             min={0}
@@ -44,7 +45,7 @@ export default async function AdminScoringPage() {
             type="number"
           />
         </label>
-        <button type="submit">Update scoring</button>
+        <button type="submit">{t.adminScoring.submit}</button>
       </form>
     </main>
   );

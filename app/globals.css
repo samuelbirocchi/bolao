@@ -155,6 +155,30 @@ label {
   color: var(--text);
 }
 
+.language-form {
+  display: inline-flex;
+}
+
+.language-form label {
+  display: inline-flex;
+}
+
+.language-form select {
+  min-height: 2.2rem;
+  min-width: 8.2rem;
+  padding: 0.35rem 0.6rem;
+}
+
+.sr-only {
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
 .page {
   margin: 0 auto;
   max-width: 1160px;

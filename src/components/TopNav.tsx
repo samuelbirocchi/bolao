@@ -1,9 +1,13 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { getCurrentUser } from "@/lib/auth";
 import { signOut } from "@/lib/actions";
+import { getDictionary, getLocale } from "@/lib/i18n/server";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 export async function TopNav() {
   const { user, profile } = await getCurrentUser();
+  const [locale, t] = await Promise.all([getLocale(), getDictionary()]);
 
   return (
     <header className="topbar">
@@ -12,25 +16,28 @@ export async function TopNav() {
         <span>Bolao</span>
       </Link>
 
-      <nav className="nav" aria-label="Main navigation">
+      <nav className="nav" aria-label={t.nav.ariaLabel}>
         {user ? (
           <>
-            <Link href="/groups">Groups</Link>
+            <Link href="/groups">{t.nav.groups}</Link>
             {profile?.is_global_admin ? (
               <>
-                <Link href="/admin/matches">Matches</Link>
-                <Link href="/admin/scoring">Scoring</Link>
+                <Link href="/admin/matches">{t.nav.matches}</Link>
+                <Link href="/admin/scoring">{t.nav.scoring}</Link>
               </>
             ) : null}
             <form action={signOut}>
               <button className="secondary" type="submit">
-                Sign out
+                {t.nav.signOut}
               </button>
             </form>
           </>
         ) : (
-          <Link href="/login">Sign in</Link>
+          <Link href="/login">{t.nav.signIn}</Link>
         )}
+        <Suspense fallback={null}>
+          <LanguageSelector currentLocale={locale} label={t.language} />
+        </Suspense>
       </nav>
     </header>
   );

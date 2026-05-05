@@ -1,28 +1,28 @@
 import { joinGroupAction } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
+import { getDictionary } from "@/lib/i18n/server";
 
 type JoinPageProps = {
   params: Promise<{ code: string }>;
 };
 
 export default async function JoinPage({ params }: JoinPageProps) {
-  await requireUser();
-  const { code } = await params;
+  const [, { code }, t] = await Promise.all([requireUser(), params, getDictionary()]);
 
   return (
     <main className="page">
       <div className="grid two">
         <section className="page-title">
-          <h1>Join group</h1>
-          <p>Confirm the invite code to enter this World Cup pool.</p>
+          <h1>{t.joinGroup.title}</h1>
+          <p>{t.joinGroup.description}</p>
         </section>
 
         <form className="card form-grid" action={joinGroupAction}>
           <label>
-            Invite code
+            {t.joinGroup.code}
             <input name="code" defaultValue={code.toUpperCase()} required />
           </label>
-          <button type="submit">Join group</button>
+          <button type="submit">{t.joinGroup.submit}</button>
         </form>
       </div>
     </main>

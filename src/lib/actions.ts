@@ -1,9 +1,10 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireGlobalAdmin, requireUser } from "@/lib/auth";
+import { LOCALE_COOKIE, isLocale } from "@/lib/i18n";
 import { fetchWc2026Matches } from "@/lib/schedule/wc2026";
 import { createClient, hasSupabaseEnv } from "@/lib/supabase/server";
 
@@ -60,6 +61,23 @@ export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/");
+}
+
+export async function setLocaleAction(formData: FormData) {
+  const locale = readString(formData, "locale");
+  const fallbackPath = "/";
+  const redirectTo = readString(formData, "redirectTo") || fallbackPath;
+
+  if (isLocale(locale)) {
+    (await cookies()).set(LOCALE_COOKIE, locale, {
+      httpOnly: true,
+      maxAge: 60 * 60 * 24 * 365,
+      path: "/",
+      sameSite: "lax",
+    });
+  }
+
+  redirect(redirectTo.startsWith("/") ? redirectTo : fallbackPath);
 }
 
 export async function createGroupAction(formData: FormData) {
