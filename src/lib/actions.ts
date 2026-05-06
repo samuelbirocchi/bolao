@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireGlobalAdmin, requireUser } from "@/lib/auth";
 import { LOCALE_COOKIE, isLocale } from "@/lib/i18n";
+import { buildOddsSnapshots, fetchWorldCupOdds } from "@/lib/odds";
 import { fetchWc2026Matches } from "@/lib/schedule/wc2026";
 import { createClient, hasSupabaseEnv } from "@/lib/supabase/server";
 
@@ -26,6 +27,41 @@ function readInteger(formData: FormData, key: string) {
     throw new Error(`${key} must be a non-negative integer.`);
   }
   return parsed;
+}
+
+function readOptionalInteger(formData: FormData, key: string) {
+  const value = readString(formData, key);
+  if (!value) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(`${key} must be a non-negative integer.`);
+  }
+
+  return parsed;
+}
+
+function readProbability(formData: FormData, key: string) {
+  const value = readString(formData, key);
+  const parsed = Number.parseFloat(value);
+
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) {
+    throw new Error(`${key} must be a percentage between 0 and 100.`);
+  }
+
+  return parsed / 100;
+}
+
+function readResolution(formData: FormData) {
+  const resolution = readString(formData, "resolution");
+
+  if (resolution === "regular" || resolution === "extra_time" || resolution === "penalties") {
+    return resolution;
+  }
+
+  throw new Error("resolution must be regular, extra_time, or penalties.");
 }
 
 export async function signInWithEmail(formData: FormData) {
@@ -195,16 +231,37 @@ export async function savePredictionAction(formData: FormData) {
 export async function updateScoringSettingsAction(formData: FormData) {
   requireSupabaseConfig();
   const { user } = await requireGlobalAdmin();
-  const exactScorePoints = readInteger(formData, "exactScorePoints");
-  const teamGoalPoints = readInteger(formData, "teamGoalPoints");
-  const outcomePoints = readInteger(formData, "outcomePoints");
+  const baseMinPoints = readInteger(formData, "baseMinPoints");
+  const baseMaxPoints = readInteger(formData, "baseMaxPoints");
+  const baseFloorProbability = readProbability(formData, "baseFloorProbability");
+  const baseCeilingProbability = readProbability(formData, "baseCeilingProbability");
+
+  if (baseFloorProbability === baseCeilingProbability) {
+    throw new Error("Base probability thresholds must be different.");
+  }
+
+  const exactScoreBonusPoints = readInteger(formData, "exactScoreBonusPoints");
+  const winnerGoalsBonusPoints = readInteger(formData, "winnerGoalsBonusPoints");
+  const goalDifferenceBonusPoints = readInteger(formData, "goalDifferenceBonusPoints");
+  const loserGoalsBonusPoints = readInteger(formData, "loserGoalsBonusPoints");
+  const routBonusPoints = readInteger(formData, "routBonusPoints");
+  const extraTimeBonusPoints = readInteger(formData, "extraTimeBonusPoints");
+  const penaltiesBonusPoints = readInteger(formData, "penaltiesBonusPoints");
 
   const supabase = await createClient();
   const { error } = await supabase.from("scoring_settings").upsert({
     id: true,
-    exact_score_points: exactScorePoints,
-    team_goal_points: teamGoalPoints,
-    outcome_points: outcomePoints,
+    base_min_points: baseMinPoints,
+    base_max_points: baseMaxPoints,
+    base_floor_probability: baseFloorProbability,
+    base_ceiling_probability: baseCeilingProbability,
+    exact_score_bonus_points: exactScoreBonusPoints,
+    winner_goals_bonus_points: winnerGoalsBonusPoints,
+    goal_difference_bonus_points: goalDifferenceBonusPoints,
+    loser_goals_bonus_points: loserGoalsBonusPoints,
+    rout_bonus_points: routBonusPoints,
+    extra_time_bonus_points: extraTimeBonusPoints,
+    penalties_bonus_points: penaltiesBonusPoints,
     updated_by: user.id,
     updated_at: new Date().toISOString(),
   });
@@ -223,6 +280,13 @@ export async function updateMatchResultAction(formData: FormData) {
   const matchId = readString(formData, "matchId");
   const homeGoals = readInteger(formData, "homeGoals");
   const awayGoals = readInteger(formData, "awayGoals");
+  const homePenalties = readOptionalInteger(formData, "homePenalties");
+  const awayPenalties = readOptionalInteger(formData, "awayPenalties");
+  const resolution = readResolution(formData);
+
+  if (resolution === "penalties" && (homePenalties === null || awayPenalties === null)) {
+    throw new Error("Penalty scores are required when the match is decided on penalties.");
+  }
 
   const supabase = await createClient();
   const { error: resultError } = await supabase.from("match_results").upsert(
@@ -230,6 +294,9 @@ export async function updateMatchResultAction(formData: FormData) {
       match_id: matchId,
       home_goals: homeGoals,
       away_goals: awayGoals,
+      home_penalties: resolution === "penalties" ? homePenalties : null,
+      away_penalties: resolution === "penalties" ? awayPenalties : null,
+      resolution,
       updated_by: user.id,
       updated_at: new Date().toISOString(),
     },
@@ -273,6 +340,7 @@ export async function syncMatchesAction() {
         stadium: match.stadium,
         kickoff_utc: match.kickoffUtc,
         status: match.status,
+        phase: match.phase,
       })),
       { onConflict: "match_number" },
     )
@@ -289,6 +357,11 @@ export async function syncMatchesAction() {
       match_id: matchIdByNumber.get(match.matchNumber),
       home_goals: match.resultHomeGoals!,
       away_goals: match.resultAwayGoals!,
+      home_penalties:
+        match.resultResolution === "penalties" ? match.resultHomePenalties : null,
+      away_penalties:
+        match.resultResolution === "penalties" ? match.resultAwayPenalties : null,
+      resolution: match.resultResolution,
       updated_by: user.id,
       updated_at: new Date().toISOString(),
     }))
@@ -301,6 +374,48 @@ export async function syncMatchesAction() {
 
     if (resultError) {
       throw new Error(resultError.message);
+    }
+  }
+
+  revalidatePath("/admin/matches");
+  revalidatePath("/groups", "layout");
+}
+
+export async function syncOddsAction() {
+  requireSupabaseConfig();
+  await requireGlobalAdmin();
+  const supabase = await createClient();
+  const now = new Date().toISOString();
+  const [{ data: matches, error: matchError }, oddsEvents] = await Promise.all([
+    supabase
+      .from("matches")
+      .select("id, home_team_name, away_team_name, kickoff_utc")
+      .gt("kickoff_utc", now),
+    fetchWorldCupOdds(),
+  ]);
+
+  if (matchError || !matches) {
+    throw new Error(matchError?.message ?? "Could not load matches for odds sync.");
+  }
+
+  const snapshots = buildOddsSnapshots(matches, oddsEvents).map((snapshot) => ({
+    match_id: snapshot.matchId,
+    odds_event_id: snapshot.oddsEventId,
+    source: snapshot.source,
+    bookmaker_count: snapshot.bookmakerCount,
+    home_win_probability: snapshot.homeWinProbability,
+    draw_probability: snapshot.drawProbability,
+    away_win_probability: snapshot.awayWinProbability,
+    captured_at: snapshot.capturedAt,
+  }));
+
+  if (snapshots.length > 0) {
+    const { error } = await supabase
+      .from("match_odds_snapshots")
+      .upsert(snapshots, { onConflict: "match_id" });
+
+    if (error) {
+      throw new Error(error.message);
     }
   }
 

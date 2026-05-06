@@ -33,6 +33,9 @@ export type MatchWithPrediction = {
   prediction_away_goals: number | null;
   result_home_goals: number | null;
   result_away_goals: number | null;
+  result_home_penalties: number | null;
+  result_away_penalties: number | null;
+  result_resolution: string | null;
 };
 
 export type LeaderboardEntry = {
@@ -41,9 +44,10 @@ export type LeaderboardEntry = {
   display_name: string | null;
   joined_at: string;
   total_points: number;
+  base_points: number;
+  bonus_points: number;
   exact_score_count: number;
-  outcome_count: number;
-  team_goal_count: number;
+  winner_count: number;
 };
 
 export type AdminMatch = {
@@ -58,6 +62,15 @@ export type AdminMatch = {
   status: string;
   result_home_goals: number | null;
   result_away_goals: number | null;
+  result_home_penalties: number | null;
+  result_away_penalties: number | null;
+  result_resolution: string | null;
+  phase: string | null;
+  odds_captured_at: string | null;
+  odds_bookmaker_count: number | null;
+  odds_home_win_probability: number | null;
+  odds_draw_probability: number | null;
+  odds_away_win_probability: number | null;
 };
 
 export async function getMyGroups(userId: string): Promise<GroupSummary[]> {
@@ -162,7 +175,9 @@ export async function getMatchesWithPredictions(
       .select("match_id, home_goals, away_goals")
       .eq("group_id", groupId)
       .eq("user_id", userId),
-    supabase.from("match_results").select("match_id, home_goals, away_goals"),
+    supabase
+      .from("match_results")
+      .select("match_id, home_goals, away_goals, home_penalties, away_penalties, resolution"),
   ]);
 
   return (matches ?? []).map((match) => {
@@ -175,6 +190,9 @@ export async function getMatchesWithPredictions(
       prediction_away_goals: prediction?.away_goals ?? null,
       result_home_goals: result?.home_goals ?? null,
       result_away_goals: result?.away_goals ?? null,
+      result_home_penalties: result?.home_penalties ?? null,
+      result_away_penalties: result?.away_penalties ?? null,
+      result_resolution: result?.resolution ?? null,
     };
   }) as MatchWithPrediction[];
 }
@@ -188,12 +206,12 @@ export async function getLeaderboard(groupId: string): Promise<LeaderboardEntry[
   const { data } = await supabase
     .from("leaderboard_entries")
     .select(
-      "group_id, user_id, display_name, joined_at, total_points, exact_score_count, outcome_count, team_goal_count",
+      "group_id, user_id, display_name, joined_at, total_points, base_points, bonus_points, exact_score_count, winner_count",
     )
     .eq("group_id", groupId)
     .order("total_points", { ascending: false })
     .order("exact_score_count", { ascending: false })
-    .order("outcome_count", { ascending: false })
+    .order("winner_count", { ascending: false })
     .order("joined_at", { ascending: true });
 
   return (data ?? []) as LeaderboardEntry[];
@@ -207,14 +225,32 @@ export async function getScoringSettings() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("scoring_settings")
-    .select("exact_score_points, team_goal_points, outcome_points")
+    .select(
+      "base_min_points, base_max_points, base_floor_probability, base_ceiling_probability, exact_score_bonus_points, winner_goals_bonus_points, goal_difference_bonus_points, loser_goals_bonus_points, rout_bonus_points, extra_time_bonus_points, penalties_bonus_points",
+    )
     .eq("id", true)
     .single();
 
   return {
-    exactScorePoints: data?.exact_score_points ?? defaultScoreWeights.exactScorePoints,
-    teamGoalPoints: data?.team_goal_points ?? defaultScoreWeights.teamGoalPoints,
-    outcomePoints: data?.outcome_points ?? defaultScoreWeights.outcomePoints,
+    baseMinPoints: data?.base_min_points ?? defaultScoreWeights.baseMinPoints,
+    baseMaxPoints: data?.base_max_points ?? defaultScoreWeights.baseMaxPoints,
+    baseFloorProbability:
+      data?.base_floor_probability ?? defaultScoreWeights.baseFloorProbability,
+    baseCeilingProbability:
+      data?.base_ceiling_probability ?? defaultScoreWeights.baseCeilingProbability,
+    exactScoreBonusPoints:
+      data?.exact_score_bonus_points ?? defaultScoreWeights.exactScoreBonusPoints,
+    winnerGoalsBonusPoints:
+      data?.winner_goals_bonus_points ?? defaultScoreWeights.winnerGoalsBonusPoints,
+    goalDifferenceBonusPoints:
+      data?.goal_difference_bonus_points ?? defaultScoreWeights.goalDifferenceBonusPoints,
+    loserGoalsBonusPoints:
+      data?.loser_goals_bonus_points ?? defaultScoreWeights.loserGoalsBonusPoints,
+    routBonusPoints: data?.rout_bonus_points ?? defaultScoreWeights.routBonusPoints,
+    extraTimeBonusPoints:
+      data?.extra_time_bonus_points ?? defaultScoreWeights.extraTimeBonusPoints,
+    penaltiesBonusPoints:
+      data?.penalties_bonus_points ?? defaultScoreWeights.penaltiesBonusPoints,
   };
 }
 
@@ -224,22 +260,38 @@ export async function getAdminMatches(): Promise<AdminMatch[]> {
   }
 
   const supabase = await createClient();
-  const [{ data: matches }, { data: results }] = await Promise.all([
+  const [{ data: matches }, { data: results }, { data: oddsSnapshots }] = await Promise.all([
     supabase
       .from("matches")
       .select(
-        "id, match_number, round, group_name, home_team_name, away_team_name, stadium, kickoff_utc, status",
+        "id, match_number, round, group_name, home_team_name, away_team_name, stadium, kickoff_utc, status, phase",
       )
       .order("match_number", { ascending: true }),
-    supabase.from("match_results").select("match_id, home_goals, away_goals"),
+    supabase
+      .from("match_results")
+      .select("match_id, home_goals, away_goals, home_penalties, away_penalties, resolution"),
+    supabase
+      .from("match_odds_snapshots")
+      .select(
+        "match_id, captured_at, bookmaker_count, home_win_probability, draw_probability, away_win_probability",
+      ),
   ]);
 
   return (matches ?? []).map((match) => {
     const result = results?.find((item) => item.match_id === match.id);
+    const odds = oddsSnapshots?.find((item) => item.match_id === match.id);
     return {
       ...match,
       result_home_goals: result?.home_goals ?? null,
       result_away_goals: result?.away_goals ?? null,
+      result_home_penalties: result?.home_penalties ?? null,
+      result_away_penalties: result?.away_penalties ?? null,
+      result_resolution: result?.resolution ?? null,
+      odds_captured_at: odds?.captured_at ?? null,
+      odds_bookmaker_count: odds?.bookmaker_count ?? null,
+      odds_home_win_probability: odds?.home_win_probability ?? null,
+      odds_draw_probability: odds?.draw_probability ?? null,
+      odds_away_win_probability: odds?.away_win_probability ?? null,
     };
   }) as AdminMatch[];
 }

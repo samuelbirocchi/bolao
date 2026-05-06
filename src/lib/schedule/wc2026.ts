@@ -14,10 +14,13 @@ type Wc2026Match = {
   stadium?: string | null;
   kickoff_utc?: string;
   status?: string;
+  phase?: string | null;
   home_score?: number | null;
   away_score?: number | null;
   home_goals?: number | null;
   away_goals?: number | null;
+  home_pen?: number | null;
+  away_pen?: number | null;
 };
 
 function normalizeStatus(status: string | undefined): ExternalMatch["status"] {
@@ -26,6 +29,22 @@ function normalizeStatus(status: string | undefined): ExternalMatch["status"] {
   }
 
   return "scheduled";
+}
+
+function normalizeResolution(
+  phase: string | null | undefined,
+  homePenalties: number | null | undefined,
+  awayPenalties: number | null | undefined,
+): ExternalMatch["resultResolution"] {
+  if (homePenalties !== null && homePenalties !== undefined && awayPenalties !== null && awayPenalties !== undefined) {
+    return "penalties";
+  }
+
+  if (phase?.includes("ET")) {
+    return "extra_time";
+  }
+
+  return "regular";
 }
 
 export async function fetchWc2026Matches(): Promise<ExternalMatch[]> {
@@ -63,7 +82,11 @@ export async function fetchWc2026Matches(): Promise<ExternalMatch[]> {
       stadium: match.stadium ?? null,
       kickoffUtc: match.kickoff_utc ?? new Date(0).toISOString(),
       status: normalizeStatus(match.status),
+      phase: match.phase ?? null,
       resultHomeGoals: match.home_score ?? match.home_goals ?? null,
       resultAwayGoals: match.away_score ?? match.away_goals ?? null,
+      resultHomePenalties: match.home_pen ?? null,
+      resultAwayPenalties: match.away_pen ?? null,
+      resultResolution: normalizeResolution(match.phase, match.home_pen, match.away_pen),
     }));
 }

@@ -9,6 +9,10 @@ export type ExternalMatch = {
   stadium: string | null;
   kickoffUtc: string;
   status: "scheduled" | "live" | "completed" | "postponed";
+  phase: string | null;
   resultHomeGoals: number | null;
   resultAwayGoals: number | null;
+  resultHomePenalties: number | null;
+  resultAwayPenalties: number | null;
+  resultResolution: "regular" | "extra_time" | "penalties";
 };
