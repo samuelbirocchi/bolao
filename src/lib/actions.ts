@@ -452,6 +452,30 @@ function avatarObjectPath(userId: string) {
   return `${userId}/avatar`;
 }
 
+// The @supabase/ssr server client does not forward the cookie-derived JWT to
+// the storage namespace's Authorization header, so storage RLS evaluates as
+// `anon` and rejects the request. Hit the storage REST API directly with the
+// user's access token instead.
+async function storageObjectRequest(
+  method: "POST" | "DELETE",
+  path: string,
+  accessToken: string,
+  init?: { body?: BodyInit; contentType?: string },
+) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const headers: Record<string, string> = {
+    apikey: anonKey,
+    authorization: `Bearer ${accessToken}`,
+  };
+  if (init?.contentType) headers["content-type"] = init.contentType;
+  return fetch(`${supabaseUrl}/storage/v1/object/${AVATAR_BUCKET}/${path}`, {
+    method,
+    headers,
+    body: init?.body,
+  });
+}
+
 export async function updateProfileAction(formData: FormData) {
   requireSupabaseConfig();
   const { user } = await requireUser();
@@ -481,12 +505,25 @@ export async function updateProfileAction(formData: FormData) {
     }
 
     const path = avatarObjectPath(user.id);
-    const { error: uploadError } = await supabase.storage
-      .from(AVATAR_BUCKET)
-      .upload(path, file, { upsert: true, contentType: file.type });
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (!accessToken) {
+      throw new Error("Not authenticated.");
+    }
 
-    if (uploadError) {
-      throw new Error(uploadError.message);
+    // Delete any existing object first; ignore 4xx (e.g. 400/404 when absent).
+    // Supabase storage's POST + x-upsert path was being rejected by RLS even
+    // with a valid JWT, so we replace upsert with explicit DELETE-then-INSERT.
+    await storageObjectRequest("DELETE", path, accessToken);
+
+    const uploadRes = await storageObjectRequest("POST", path, accessToken, {
+      body: file,
+      contentType: file.type,
+    });
+
+    if (!uploadRes.ok) {
+      const message = await uploadRes.text().catch(() => uploadRes.statusText);
+      throw new Error(`Avatar upload failed: ${message || uploadRes.statusText}`);
     }
 
     const { data: publicUrlData } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
@@ -517,7 +554,12 @@ export async function removeAvatarAction() {
   const { user } = await requireUser();
 
   const supabase = await createClient();
-  await supabase.storage.from(AVATAR_BUCKET).remove([avatarObjectPath(user.id)]);
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+  if (!accessToken) {
+    throw new Error("Not authenticated.");
+  }
+  await storageObjectRequest("DELETE", avatarObjectPath(user.id), accessToken);
 
   const { error } = await supabase
     .from("profiles")
