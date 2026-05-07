@@ -665,6 +665,22 @@ label {
   font-weight: 950;
 }
 
+.team-name {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.match-title .team-name {
+  justify-content: center;
+}
+
+.team-name-flag {
+  flex: 0 0 auto;
+  font-size: 0.95em;
+  line-height: 1;
+}
+
 .score-inputs {
   align-items: end;
   display: grid;

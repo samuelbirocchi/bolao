@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TeamName } from "@/components/TeamName";
 import { notFound } from "next/navigation";
 import { savePredictionAction } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
@@ -86,9 +87,9 @@ export default async function MatchesPage({ params }: MatchesPageProps) {
                 </div>
 
                 <div className="match-title">
-                  <span className="team">{homeName}</span>
+                  <TeamName canonicalName={match.home_team_name} className="team" name={homeName} />
                   <span className="muted">{t.matches.versus}</span>
-                  <span className="team">{awayName}</span>
+                  <TeamName canonicalName={match.away_team_name} className="team" name={awayName} />
                 </div>
 
                 {match.result_home_goals !== null && match.result_away_goals !== null ? (
@@ -118,7 +119,7 @@ export default async function MatchesPage({ params }: MatchesPageProps) {
                   <input name="groupId" type="hidden" value={group.id} />
                   <input name="matchId" type="hidden" value={match.id} />
                   <label>
-                    {homeName}
+                    <TeamName canonicalName={match.home_team_name} name={homeName} />
                     <input
                       aria-label={`${homeName} ${t.matches.goals}`}
                       defaultValue={match.prediction_home_goals ?? ""}
@@ -130,7 +131,7 @@ export default async function MatchesPage({ params }: MatchesPageProps) {
                     />
                   </label>
                   <label>
-                    {awayName}
+                    <TeamName canonicalName={match.away_team_name} name={awayName} />
                     <input
                       aria-label={`${awayName} ${t.matches.goals}`}
                       defaultValue={match.prediction_away_goals ?? ""}

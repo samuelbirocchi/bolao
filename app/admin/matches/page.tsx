@@ -1,3 +1,4 @@
+import { TeamName } from "@/components/TeamName";
 import { syncMatchesAction, syncOddsAction, updateMatchResultAction } from "@/lib/actions";
 import { requireGlobalAdmin } from "@/lib/auth";
 import { getAdminMatches } from "@/lib/data";
@@ -55,9 +56,9 @@ export default async function AdminMatchesPage() {
                   : ` · ${t.adminMatches.notSynced}`}
               </div>
               <div className="match-title">
-                <span className="team">{match.home_team_name}</span>
+                <TeamName className="team" name={match.home_team_name} />
                 <span className="muted">{t.matches.versus}</span>
-                <span className="team">{match.away_team_name}</span>
+                <TeamName className="team" name={match.away_team_name} />
               </div>
               <form className="score-inputs admin-score-inputs" action={updateMatchResultAction}>
                 <input name="matchId" type="hidden" value={match.id} />
