@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+.vercel
+.omx
+.codex
+node_modules
+.next
+coverage
+dist

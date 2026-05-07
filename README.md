@@ -127,6 +127,10 @@ points.
 5. Enter or sync final scores, resolution, and penalty shootout scores.
 6. Tune scoring weights in `/admin/scoring`.
 
+## Vercel Deployment
+
+See [`docs/vercel-deployment.md`](docs/vercel-deployment.md) for the production Vercel import settings, required environment variables, deploy flow, and smoke-test checklist.
+
 ## Verification
 
 ```bash

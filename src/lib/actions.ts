@@ -5,9 +5,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireGlobalAdmin, requireUser } from "@/lib/auth";
 import { LOCALE_COOKIE, isLocale } from "@/lib/i18n";
+import { redeemInviteCode } from "@/lib/invites";
 import { buildOddsSnapshots, fetchWorldCupOdds } from "@/lib/odds";
 import { fetchWc2026Matches } from "@/lib/schedule/wc2026";
 import { createClient, hasSupabaseEnv } from "@/lib/supabase/server";
+
+const INVITE_CODE_PATTERN = /^[A-Z0-9]{1,32}$/;
 
 function requireSupabaseConfig() {
   if (!hasSupabaseEnv()) {
@@ -64,32 +67,67 @@ function readResolution(formData: FormData) {
   throw new Error("resolution must be regular, extra_time, or penalties.");
 }
 
+function normalizeOrigin(origin: string) {
+  return origin.trim().replace(/\/+$/, "");
+}
+
+function configuredSiteOrigin() {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+
+  if (configured) {
+    return normalizeOrigin(configured);
+  }
+
+  const vercelProductionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+
+  if (vercelProductionUrl) {
+    return normalizeOrigin(`https://${vercelProductionUrl}`);
+  }
+
+  const vercelDeploymentUrl = process.env.VERCEL_URL?.trim();
+
+  if (vercelDeploymentUrl) {
+    return normalizeOrigin(`https://${vercelDeploymentUrl}`);
+  }
+
+  return null;
+}
+
 export async function signInWithEmail(formData: FormData) {
   requireSupabaseConfig();
 
   const email = readString(formData, "email");
+  const rawInviteCode = readString(formData, "inviteCode").toUpperCase();
+  const inviteCode = INVITE_CODE_PATTERN.test(rawInviteCode) ? rawInviteCode : "";
+  const requestOrigin = (await headers()).get("origin");
   const origin =
-    (await headers()).get("origin") ??
-    process.env.NEXT_PUBLIC_SITE_URL ??
+    configuredSiteOrigin() ??
+    (requestOrigin ? normalizeOrigin(requestOrigin) : null) ??
     "http://localhost:3000";
 
+  const formPath = inviteCode ? `/groups/join/${inviteCode}` : "/login";
+
   if (!email) {
-    redirect("/login?message=Email is required");
+    redirect(`${formPath}?message=${encodeURIComponent("Email is required")}`);
   }
+
+  const callbackUrl = inviteCode
+    ? `${origin}/auth/callback?invite=${inviteCode}`
+    : `${origin}/auth/callback`;
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${origin}/auth/callback`,
+      emailRedirectTo: callbackUrl,
     },
   });
 
   if (error) {
-    redirect(`/login?message=${encodeURIComponent(error.message)}`);
+    redirect(`${formPath}?message=${encodeURIComponent(error.message)}`);
   }
 
-  redirect("/login?message=Check your email for a magic link");
+  redirect(`${formPath}?message=${encodeURIComponent("Check your email for a magic link")}`);
 }
 
 export async function signOut() {
@@ -163,32 +201,14 @@ export async function joinGroupAction(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { data: invite, error: inviteError } = await supabase
-    .from("invite_codes")
-    .select("group_id")
-    .eq("code", code)
-    .is("revoked_at", null)
-    .single();
+  const result = await redeemInviteCode(supabase, user.id, code);
 
-  if (inviteError || !invite) {
-    throw new Error("Invite code was not found.");
-  }
-
-  const { error } = await supabase.from("group_memberships").upsert(
-    {
-      group_id: invite.group_id,
-      user_id: user.id,
-      role: "member",
-    },
-    { onConflict: "group_id,user_id" },
-  );
-
-  if (error) {
-    throw new Error(error.message);
+  if (!result.ok) {
+    throw new Error(result.message);
   }
 
   revalidatePath("/groups");
-  redirect(`/groups/${invite.group_id}`);
+  redirect(`/groups/${result.groupId}`);
 }
 
 export async function savePredictionAction(formData: FormData) {

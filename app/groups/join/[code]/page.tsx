@@ -1,13 +1,44 @@
-import { joinGroupAction } from "@/lib/actions";
-import { requireUser } from "@/lib/auth";
+import { joinGroupAction, signInWithEmail } from "@/lib/actions";
+import { getCurrentUser } from "@/lib/auth";
 import { getDictionary } from "@/lib/i18n/server";
 
 type JoinPageProps = {
   params: Promise<{ code: string }>;
+  searchParams: Promise<{ message?: string }>;
 };
 
-export default async function JoinPage({ params }: JoinPageProps) {
-  const [, { code }, t] = await Promise.all([requireUser(), params, getDictionary()]);
+export default async function JoinPage({ params, searchParams }: JoinPageProps) {
+  const [{ user }, { code }, queryParams, t] = await Promise.all([
+    getCurrentUser(),
+    params,
+    searchParams,
+    getDictionary(),
+  ]);
+
+  const inviteCode = code.toUpperCase();
+
+  if (!user) {
+    return (
+      <main className="page">
+        <div className="grid two">
+          <section className="page-title">
+            <h1>{t.joinGroup.title}</h1>
+            <p>{t.joinGroup.signInPrompt}</p>
+          </section>
+
+          <form className="card form-grid" action={signInWithEmail}>
+            {queryParams.message ? <div className="notice">{queryParams.message}</div> : null}
+            <input type="hidden" name="inviteCode" value={inviteCode} />
+            <label>
+              {t.login.email}
+              <input name="email" type="email" placeholder="you@example.com" required />
+            </label>
+            <button type="submit">{t.login.submit}</button>
+          </form>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="page">
@@ -20,7 +51,7 @@ export default async function JoinPage({ params }: JoinPageProps) {
         <form className="card form-grid" action={joinGroupAction}>
           <label>
             {t.joinGroup.code}
-            <input name="code" defaultValue={code.toUpperCase()} required />
+            <input name="code" defaultValue={inviteCode} required />
           </label>
           <button type="submit">{t.joinGroup.submit}</button>
         </form>

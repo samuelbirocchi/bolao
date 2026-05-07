@@ -93,6 +93,7 @@ export const dictionaries = {
       description: "Confirm the invite code to enter this World Cup pool.",
       code: "Invite code",
       submit: "Join group",
+      signInPrompt: "Sign in with a magic link to join this World Cup pool.",
     },
     matches: {
       empty: "No matches are loaded yet. Ask a global admin to sync or add them.",
@@ -231,6 +232,7 @@ export const dictionaries = {
       description: "Confirme o código de convite para entrar neste bolão da Copa.",
       code: "Código de convite",
       submit: "Entrar no grupo",
+      signInPrompt: "Entre com um link mágico para participar deste bolão da Copa.",
     },
     matches: {
       empty: "Nenhum jogo foi carregado ainda. Peça para um administrador global sincronizar ou adicionar jogos.",
@@ -369,6 +371,7 @@ export const dictionaries = {
       description: "Confirma el código de invitación para entrar en esta quiniela del Mundial.",
       code: "Código de invitación",
       submit: "Unirse al grupo",
+      signInPrompt: "Inicia sesión con un enlace mágico para unirte a esta quiniela del Mundial.",
     },
     matches: {
       empty: "Aún no hay partidos cargados. Pide a un administrador global que los sincronice o agregue.",
