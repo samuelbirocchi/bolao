@@ -4,11 +4,16 @@ import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireGlobalAdmin, requireUser } from "@/lib/auth";
+import { validateAvatarUrl } from "@/lib/avatar";
 import { LOCALE_COOKIE, isLocale } from "@/lib/i18n";
 import { redeemInviteCode } from "@/lib/invites";
 import { buildOddsSnapshots, fetchWorldCupOdds } from "@/lib/odds";
 import { fetchWc2026Matches } from "@/lib/schedule/wc2026";
 import { createClient, hasSupabaseEnv } from "@/lib/supabase/server";
+
+const AVATAR_BUCKET = "avatars";
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+const DISPLAY_NAME_MAX_LENGTH = 80;
 
 const INVITE_CODE_PATTERN = /^[A-Z0-9]{1,32}$/;
 
@@ -440,5 +445,89 @@ export async function syncOddsAction() {
   }
 
   revalidatePath("/admin/matches");
+  revalidatePath("/groups", "layout");
+}
+
+function avatarObjectPath(userId: string) {
+  return `${userId}/avatar`;
+}
+
+export async function updateProfileAction(formData: FormData) {
+  requireSupabaseConfig();
+  const { user } = await requireUser();
+
+  const displayName = readString(formData, "displayName");
+  if (!displayName) {
+    throw new Error("Display name is required.");
+  }
+  if (displayName.length > DISPLAY_NAME_MAX_LENGTH) {
+    throw new Error(`Display name must be at most ${DISPLAY_NAME_MAX_LENGTH} characters.`);
+  }
+
+  const supabase = await createClient();
+  const update: { display_name: string; avatar_url?: string | null } = {
+    display_name: displayName,
+  };
+
+  const fileEntry = formData.get("avatarFile");
+  const file = fileEntry instanceof File && fileEntry.size > 0 ? fileEntry : null;
+
+  if (file) {
+    if (!file.type.startsWith("image/")) {
+      throw new Error("Avatar file must be an image.");
+    }
+    if (file.size > AVATAR_MAX_BYTES) {
+      throw new Error("Avatar file must be 2 MB or smaller.");
+    }
+
+    const path = avatarObjectPath(user.id);
+    const { error: uploadError } = await supabase.storage
+      .from(AVATAR_BUCKET)
+      .upload(path, file, { upsert: true, contentType: file.type });
+
+    if (uploadError) {
+      throw new Error(uploadError.message);
+    }
+
+    const { data: publicUrlData } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
+    update.avatar_url = `${publicUrlData.publicUrl}?v=${Date.now()}`;
+  } else {
+    const rawUrl = readString(formData, "avatarUrl");
+    const validated = validateAvatarUrl(rawUrl);
+    if (validated !== null) {
+      update.avatar_url = validated;
+    }
+  }
+
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .update(update)
+    .eq("id", user.id);
+
+  if (profileError) {
+    throw new Error(profileError.message);
+  }
+
+  revalidatePath("/settings");
+  revalidatePath("/groups", "layout");
+}
+
+export async function removeAvatarAction() {
+  requireSupabaseConfig();
+  const { user } = await requireUser();
+
+  const supabase = await createClient();
+  await supabase.storage.from(AVATAR_BUCKET).remove([avatarObjectPath(user.id)]);
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ avatar_url: null })
+    .eq("id", user.id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/settings");
   revalidatePath("/groups", "layout");
 }

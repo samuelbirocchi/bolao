@@ -353,8 +353,29 @@ label {
   border-radius: var(--radius);
   display: grid;
   gap: 0.8rem;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto auto 1fr auto;
   padding: 0.85rem;
+}
+
+.avatar {
+  align-items: center;
+  border-radius: 50%;
+  display: inline-flex;
+  flex-shrink: 0;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.avatar-img {
+  background: var(--panel-strong);
+  object-fit: cover;
+}
+
+.avatar-initials {
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  user-select: none;
 }
 
 .rank {

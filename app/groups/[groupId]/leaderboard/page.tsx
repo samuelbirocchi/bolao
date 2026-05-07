@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { UserAvatar } from "@/components/UserAvatar";
 import { requireUser } from "@/lib/auth";
 import { getGroupDetail, getLeaderboard, getScoringSettings } from "@/lib/data";
 import { getDictionary } from "@/lib/i18n/server";
@@ -51,6 +52,11 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
           {entries.map((entry, index) => (
             <article className="leader-row" key={entry.user_id}>
               <span className="rank">{index + 1}</span>
+              <UserAvatar
+                name={entry.display_name}
+                seed={entry.user_id}
+                url={entry.avatar_url}
+              />
               <div>
                 <strong>{entry.display_name ?? t.leaderboard.player}</strong>
                 <p className="muted">

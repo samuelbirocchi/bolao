@@ -46,6 +46,7 @@ export type LeaderboardEntry = {
   group_id: string;
   user_id: string;
   display_name: string | null;
+  avatar_url: string | null;
   joined_at: string;
   total_points: number;
   base_points: number;
@@ -221,7 +222,7 @@ export async function getLeaderboard(groupId: string): Promise<LeaderboardEntry[
   const { data } = await supabase
     .from("leaderboard_entries")
     .select(
-      "group_id, user_id, display_name, joined_at, total_points, base_points, bonus_points, exact_score_count, winner_count",
+      "group_id, user_id, display_name, avatar_url, joined_at, total_points, base_points, bonus_points, exact_score_count, winner_count",
     )
     .eq("group_id", groupId)
     .order("total_points", { ascending: false })

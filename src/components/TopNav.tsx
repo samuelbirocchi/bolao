@@ -26,6 +26,7 @@ export async function TopNav() {
                 <Link href="/admin/scoring">{t.nav.scoring}</Link>
               </>
             ) : null}
+            <Link href="/settings">{t.nav.settings}</Link>
             <form action={signOut}>
               <button className="secondary" type="submit">
                 {t.nav.signOut}
