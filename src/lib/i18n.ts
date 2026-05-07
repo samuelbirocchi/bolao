@@ -34,6 +34,7 @@ export const dictionaries = {
       settings: "Profile",
       signIn: "Sign in",
       signOut: "Sign out",
+      github: "View source on GitHub",
     },
     setupNotice:
       "Supabase is not configured yet. Copy .env.example to .env.local, add the Supabase URL and anon key, then run the SQL migration.",
@@ -191,6 +192,7 @@ export const dictionaries = {
       settings: "Perfil",
       signIn: "Entrar",
       signOut: "Sair",
+      github: "Ver código no GitHub",
     },
     setupNotice:
       "O Supabase ainda não está configurado. Copie .env.example para .env.local, adicione a URL e a chave anônima do Supabase e execute a migração SQL.",
@@ -348,6 +350,7 @@ export const dictionaries = {
       settings: "Perfil",
       signIn: "Iniciar sesión",
       signOut: "Cerrar sesión",
+      github: "Ver código en GitHub",
     },
     setupNotice:
       "Supabase aún no está configurado. Copia .env.example a .env.local, agrega la URL y la clave anónima de Supabase y ejecuta la migración SQL.",
