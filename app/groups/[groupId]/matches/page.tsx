@@ -11,6 +11,10 @@ type MatchesPageProps = {
   params: Promise<{ groupId: string }>;
 };
 
+function formatProbability(value: number | null) {
+  return value === null ? "—" : `${Math.round(value * 100)}%`;
+}
+
 function formatResolution(
   resolution: string | null,
   labels: { afterExtraTime: string; onPenalties: string },
@@ -98,6 +102,15 @@ export default async function MatchesPage({ params }: MatchesPageProps) {
                     {formatResolution(match.result_resolution, t.matches)
                       ? ` ${formatResolution(match.result_resolution, t.matches)}`
                       : ""}
+                  </div>
+                ) : null}
+
+                {match.odds_captured_at !== null ? (
+                  <div className="notice">
+                    {t.matches.odds}: {t.matches.home}{" "}
+                    {formatProbability(match.odds_home_win_probability)} · {t.matches.draw}{" "}
+                    {formatProbability(match.odds_draw_probability)} · {t.matches.away}{" "}
+                    {formatProbability(match.odds_away_win_probability)}
                   </div>
                 ) : null}
 

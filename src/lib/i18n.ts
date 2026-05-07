@@ -107,6 +107,10 @@ export const dictionaries = {
       locked: "Locked",
       save: "Save",
       fallbackTeam: "TBD",
+      odds: "Odds",
+      home: "Home",
+      draw: "Draw",
+      away: "Away",
     },
     leaderboard: {
       title: "Leaderboard",
@@ -246,6 +250,10 @@ export const dictionaries = {
       locked: "Travado",
       save: "Salvar",
       fallbackTeam: "A definir",
+      odds: "Odds",
+      home: "Mandante",
+      draw: "Empate",
+      away: "Visitante",
     },
     leaderboard: {
       title: "Classificação",
@@ -385,6 +393,10 @@ export const dictionaries = {
       locked: "Bloqueado",
       save: "Guardar",
       fallbackTeam: "Por definir",
+      odds: "Cuotas",
+      home: "Local",
+      draw: "Empate",
+      away: "Visitante",
     },
     leaderboard: {
       title: "Clasificación",

@@ -36,6 +36,10 @@ export type MatchWithPrediction = {
   result_home_penalties: number | null;
   result_away_penalties: number | null;
   result_resolution: string | null;
+  odds_captured_at: string | null;
+  odds_home_win_probability: number | null;
+  odds_draw_probability: number | null;
+  odds_away_win_probability: number | null;
 };
 
 export type LeaderboardEntry = {
@@ -163,26 +167,33 @@ export async function getMatchesWithPredictions(
   }
 
   const supabase = await createClient();
-  const [{ data: matches }, { data: predictions }, { data: results }] = await Promise.all([
-    supabase
-      .from("matches")
-      .select(
-        "id, match_number, round, group_name, home_team_name, away_team_name, home_team_placeholder, away_team_placeholder, stadium, kickoff_utc, status",
-      )
-      .order("match_number", { ascending: true }),
-    supabase
-      .from("predictions")
-      .select("match_id, home_goals, away_goals")
-      .eq("group_id", groupId)
-      .eq("user_id", userId),
-    supabase
-      .from("match_results")
-      .select("match_id, home_goals, away_goals, home_penalties, away_penalties, resolution"),
-  ]);
+  const [{ data: matches }, { data: predictions }, { data: results }, { data: oddsSnapshots }] =
+    await Promise.all([
+      supabase
+        .from("matches")
+        .select(
+          "id, match_number, round, group_name, home_team_name, away_team_name, home_team_placeholder, away_team_placeholder, stadium, kickoff_utc, status",
+        )
+        .order("match_number", { ascending: true }),
+      supabase
+        .from("predictions")
+        .select("match_id, home_goals, away_goals")
+        .eq("group_id", groupId)
+        .eq("user_id", userId),
+      supabase
+        .from("match_results")
+        .select("match_id, home_goals, away_goals, home_penalties, away_penalties, resolution"),
+      supabase
+        .from("match_odds_snapshots")
+        .select(
+          "match_id, captured_at, home_win_probability, draw_probability, away_win_probability",
+        ),
+    ]);
 
   return (matches ?? []).map((match) => {
     const prediction = predictions?.find((item) => item.match_id === match.id);
     const result = results?.find((item) => item.match_id === match.id);
+    const odds = oddsSnapshots?.find((item) => item.match_id === match.id);
 
     return {
       ...match,
@@ -193,6 +204,10 @@ export async function getMatchesWithPredictions(
       result_home_penalties: result?.home_penalties ?? null,
       result_away_penalties: result?.away_penalties ?? null,
       result_resolution: result?.resolution ?? null,
+      odds_captured_at: odds?.captured_at ?? null,
+      odds_home_win_probability: odds?.home_win_probability ?? null,
+      odds_draw_probability: odds?.draw_probability ?? null,
+      odds_away_win_probability: odds?.away_win_probability ?? null,
     };
   }) as MatchWithPrediction[];
 }
