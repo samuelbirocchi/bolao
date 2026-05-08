@@ -31,6 +31,7 @@ export const dictionaries = {
       groups: "Groups",
       matches: "Matches",
       scoring: "Scoring",
+      faq: "FAQ",
       settings: "Profile",
       signIn: "Sign in",
       signOut: "Sign out",
@@ -149,6 +150,43 @@ export const dictionaries = {
       apiPhase: "API phase",
       saveResult: "Save result",
     },
+    faq: {
+      title: "FAQ",
+      description: "How predictions, odds, and bonus points turn into the leaderboard.",
+      heroEyebrow: "Scoring rules",
+      summaryTitle: "Short version",
+      summary:
+        "Pick the final score before kickoff. Once the official result is set, the leaderboard awards odds-based base points for correct winners, then adds score-shape bonuses.",
+      formulaTitle: "Formula",
+      formula: "Total points = base points + bonus points.",
+      baseTitle: "How base points work",
+      baseBody:
+        "A correct winner earns {baseMin}-{baseMax} base points. Picking a bigger underdog is worth more: probabilities at or below {floor}% score {baseMax}, probabilities at or above {ceiling}% score {baseMin}, and values in between are rounded linearly.",
+      missingOdds:
+        "If odds were not synced for that match, a correct winner falls back to {baseMin} base points.",
+      wrongWinner:
+        "If the predicted winner is wrong, base points are 0. Draw predictions currently do not earn odds-based winner points.",
+      bonusTitle: "Bonus points",
+      exactScore: "Exact score: +{exact}",
+      winnerGoals: "Winner goals, non-exact only: +{winnerGoals}",
+      goalDifference: "Goal difference, non-exact only: +{goalDifference}",
+      loserGoals: "Loser goals, non-exact only: +{loserGoals}",
+      rout: "Rout, when the winning side scores 4+ in both prediction and result: +{rout}",
+      extraTime: "Correct winner after extra time: +{extraTime}",
+      penalties: "Correct winner after penalties: +{penalties}",
+      detailsTitle: "Common questions",
+      lockQuestion: "When do predictions lock?",
+      lockAnswer: "Each match stays editable until kickoff. After kickoff, that prediction is locked.",
+      resultQuestion: "When are points calculated?",
+      resultAnswer:
+        "Points appear after an admin syncs or saves the match result. Scores are calculated from the leaderboard view, so changing scoring settings or results recalculates completed matches on read.",
+      penaltiesQuestion: "How are extra time and penalties handled?",
+      penaltiesAnswer:
+        "The score line is compared against the match goals. If the match is decided on penalties, the penalty shootout decides the winner for correct-winner scoring and can add the penalty bonus.",
+      oddsQuestion: "Where do odds come from?",
+      oddsAnswer:
+        "Admins sync odds snapshots before matches. The app converts bookmaker decimal odds into fair home/draw/away probabilities and uses the home or away probability for the team you picked to win.",
+    },
     adminScoring: {
       title: "Scoring",
       description: "Configure the global weights used by every group leaderboard.",
@@ -189,6 +227,7 @@ export const dictionaries = {
       groups: "Grupos",
       matches: "Jogos",
       scoring: "Pontuação",
+      faq: "FAQ",
       settings: "Perfil",
       signIn: "Entrar",
       signOut: "Sair",
@@ -307,6 +346,43 @@ export const dictionaries = {
       apiPhase: "Fase da API",
       saveResult: "Salvar resultado",
     },
+    faq: {
+      title: "FAQ",
+      description: "Como palpites, odds e bônus viram a classificação.",
+      heroEyebrow: "Regras de pontuação",
+      summaryTitle: "Resumo",
+      summary:
+        "Palpite o placar final antes do início do jogo. Quando o resultado oficial é informado, a classificação dá pontos-base por odds para vencedores corretos e depois soma bônus pelo formato do placar.",
+      formulaTitle: "Fórmula",
+      formula: "Pontuação total = pontos-base + bônus.",
+      baseTitle: "Como funcionam os pontos-base",
+      baseBody:
+        "Um vencedor correto rende {baseMin}-{baseMax} pontos-base. Acertar um azarão vale mais: probabilidades em {floor}% ou menos valem {baseMax}, probabilidades em {ceiling}% ou mais valem {baseMin}, e valores intermediários são arredondados linearmente.",
+      missingOdds:
+        "Se as odds não foram sincronizadas para o jogo, um vencedor correto recebe {baseMin} pontos-base.",
+      wrongWinner:
+        "Se o vencedor previsto estiver errado, os pontos-base são 0. Palpites de empate atualmente não recebem pontos de vencedor baseados em odds.",
+      bonusTitle: "Bônus",
+      exactScore: "Placar exato: +{exact}",
+      winnerGoals: "Gols do vencedor, apenas quando não for exato: +{winnerGoals}",
+      goalDifference: "Diferença de gols, apenas quando não for exato: +{goalDifference}",
+      loserGoals: "Gols do perdedor, apenas quando não for exato: +{loserGoals}",
+      rout: "Goleada, quando o vencedor faz 4+ no palpite e no resultado: +{rout}",
+      extraTime: "Vencedor correto após prorrogação: +{extraTime}",
+      penalties: "Vencedor correto nos pênaltis: +{penalties}",
+      detailsTitle: "Perguntas comuns",
+      lockQuestion: "Quando os palpites travam?",
+      lockAnswer: "Cada jogo fica editável até o início da partida. Depois do apito inicial, o palpite fica travado.",
+      resultQuestion: "Quando os pontos são calculados?",
+      resultAnswer:
+        "Os pontos aparecem depois que um administrador sincroniza ou salva o resultado. A pontuação vem da view da classificação, então mudar regras ou resultados recalcula jogos concluídos na leitura.",
+      penaltiesQuestion: "Como prorrogação e pênaltis são tratados?",
+      penaltiesAnswer:
+        "O placar é comparado com os gols do jogo. Se a partida for decidida nos pênaltis, a disputa de pênaltis define o vencedor para a pontuação de vencedor correto e pode somar o bônus de pênaltis.",
+      oddsQuestion: "De onde vêm as odds?",
+      oddsAnswer:
+        "Administradores sincronizam snapshots de odds antes dos jogos. O app converte odds decimais das casas em probabilidades justas de mandante/empate/visitante e usa a probabilidade do mandante ou visitante que você escolheu como vencedor.",
+    },
     adminScoring: {
       title: "Pontuação",
       description: "Configure os pesos globais usados pela classificação de todos os grupos.",
@@ -347,6 +423,7 @@ export const dictionaries = {
       groups: "Grupos",
       matches: "Partidos",
       scoring: "Puntuación",
+      faq: "FAQ",
       settings: "Perfil",
       signIn: "Iniciar sesión",
       signOut: "Cerrar sesión",
@@ -464,6 +541,43 @@ export const dictionaries = {
       awayPenalties: "Pen. visitante",
       apiPhase: "Fase API",
       saveResult: "Guardar resultado",
+    },
+    faq: {
+      title: "FAQ",
+      description: "Cómo las predicciones, cuotas y bonos se convierten en la clasificación.",
+      heroEyebrow: "Reglas de puntuación",
+      summaryTitle: "Resumen",
+      summary:
+        "Predice el marcador final antes del inicio. Cuando se registra el resultado oficial, la clasificación otorga puntos base según cuotas por acertar el ganador y luego suma bonos por el marcador.",
+      formulaTitle: "Fórmula",
+      formula: "Puntos totales = puntos base + bonos.",
+      baseTitle: "Cómo funcionan los puntos base",
+      baseBody:
+        "Un ganador correcto da {baseMin}-{baseMax} puntos base. Elegir un no favorito vale más: probabilidades de {floor}% o menos valen {baseMax}, probabilidades de {ceiling}% o más valen {baseMin}, y los valores intermedios se redondean linealmente.",
+      missingOdds:
+        "Si no se sincronizaron cuotas para ese partido, un ganador correcto recibe {baseMin} puntos base.",
+      wrongWinner:
+        "Si el ganador predicho es incorrecto, los puntos base son 0. Las predicciones de empate actualmente no reciben puntos de ganador basados en cuotas.",
+      bonusTitle: "Bonos",
+      exactScore: "Marcador exacto: +{exact}",
+      winnerGoals: "Goles del ganador, solo si no es exacto: +{winnerGoals}",
+      goalDifference: "Diferencia de goles, solo si no es exacto: +{goalDifference}",
+      loserGoals: "Goles del perdedor, solo si no es exacto: +{loserGoals}",
+      rout: "Goleada, cuando el ganador marca 4+ en la predicción y el resultado: +{rout}",
+      extraTime: "Ganador correcto tras prórroga: +{extraTime}",
+      penalties: "Ganador correcto en penales: +{penalties}",
+      detailsTitle: "Preguntas frecuentes",
+      lockQuestion: "¿Cuándo se bloquean las predicciones?",
+      lockAnswer: "Cada partido se puede editar hasta el inicio. Después del inicio, la predicción queda bloqueada.",
+      resultQuestion: "¿Cuándo se calculan los puntos?",
+      resultAnswer:
+        "Los puntos aparecen después de que un administrador sincroniza o guarda el resultado. La puntuación se calcula desde la vista de clasificación, así que cambiar reglas o resultados recalcula los partidos completados al leerlos.",
+      penaltiesQuestion: "¿Cómo se manejan la prórroga y los penales?",
+      penaltiesAnswer:
+        "El marcador se compara con los goles del partido. Si el partido se decide por penales, la tanda decide el ganador para la puntuación de ganador correcto y puede sumar el bono de penales.",
+      oddsQuestion: "¿De dónde salen las cuotas?",
+      oddsAnswer:
+        "Los administradores sincronizan snapshots de cuotas antes de los partidos. La app convierte cuotas decimales de casas en probabilidades justas de local/empate/visitante y usa la probabilidad local o visitante del equipo que elegiste como ganador.",
     },
     adminScoring: {
       title: "Puntuación",

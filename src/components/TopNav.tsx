@@ -17,6 +17,7 @@ export async function TopNav() {
       </Link>
 
       <nav className="nav" aria-label={t.nav.ariaLabel}>
+        <Link href="/faq">{t.nav.faq}</Link>
         {user ? (
           <>
             <Link href="/groups">{t.nav.groups}</Link>

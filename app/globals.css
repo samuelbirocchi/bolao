@@ -824,3 +824,66 @@ label {
     display: none;
   }
 }
+
+.faq-grid {
+  margin-bottom: 1rem;
+}
+
+.faq-card {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.faq-card p {
+  line-height: 1.65;
+  margin: 0;
+}
+
+.faq-formula {
+  background:
+    linear-gradient(135deg, rgba(13, 122, 89, 0.13), rgba(240, 187, 53, 0.2)),
+    var(--panel);
+}
+
+.faq-formula p {
+  color: var(--brand-strong);
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+  font-weight: 950;
+  letter-spacing: -0.045em;
+}
+
+.rule-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+.rule-list li {
+  line-height: 1.55;
+  padding-left: 0.15rem;
+}
+
+.section-heading {
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  letter-spacing: -0.055em;
+  margin: 0.8rem 0 0;
+}
+
+.faq-detail {
+  padding: 0;
+}
+
+.faq-detail summary {
+  cursor: pointer;
+  font-size: 1.05rem;
+  font-weight: 950;
+  list-style-position: inside;
+  padding: clamp(1rem, 2vw, 1.25rem);
+}
+
+.faq-detail p {
+  line-height: 1.65;
+  margin: 0;
+  padding: 0 clamp(1rem, 2vw, 1.25rem) clamp(1rem, 2vw, 1.25rem);
+}
