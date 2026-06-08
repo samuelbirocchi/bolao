@@ -175,6 +175,7 @@ export async function getMatchesWithPredictions(
         .select(
           "id, match_number, round, group_name, home_team_name, away_team_name, home_team_placeholder, away_team_placeholder, stadium, kickoff_utc, status",
         )
+        .order("kickoff_utc", { ascending: true })
         .order("match_number", { ascending: true }),
       supabase
         .from("predictions")

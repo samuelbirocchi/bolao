@@ -4,7 +4,7 @@ import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireGlobalAdmin, requireUser } from "@/lib/auth";
-import { validateAvatarUrl } from "@/lib/avatar";
+import { avatarObjectPath, avatarStoragePathFromPublicUrl, validateAvatarUrl } from "@/lib/avatar";
 import { LOCALE_COOKIE, isLocale } from "@/lib/i18n";
 import { redeemInviteCode } from "@/lib/invites";
 import { buildOddsSnapshots, fetchWorldCupOdds } from "@/lib/odds";
@@ -448,10 +448,6 @@ export async function syncOddsAction() {
   revalidatePath("/groups", "layout");
 }
 
-function avatarObjectPath(userId: string) {
-  return `${userId}/avatar`;
-}
-
 // The @supabase/ssr server client does not forward the cookie-derived JWT to
 // the storage namespace's Authorization header, so storage RLS evaluates as
 // `anon` and rejects the request. Hit the storage REST API directly with the
@@ -492,6 +488,9 @@ export async function updateProfileAction(formData: FormData) {
   const update: { display_name: string; avatar_url?: string | null } = {
     display_name: displayName,
   };
+  let previousAvatarPath: string | null = null;
+  let uploadedAvatarPath: string | null = null;
+  let accessTokenForCleanup: string | null = null;
 
   const fileEntry = formData.get("avatarFile");
   const file = fileEntry instanceof File && fileEntry.size > 0 ? fileEntry : null;
@@ -504,17 +503,19 @@ export async function updateProfileAction(formData: FormData) {
       throw new Error("Avatar file must be 2 MB or smaller.");
     }
 
-    const path = avatarObjectPath(user.id);
+    const { data: currentProfile } = await supabase
+      .from("profiles")
+      .select("avatar_url")
+      .eq("id", user.id)
+      .maybeSingle();
+    previousAvatarPath = avatarStoragePathFromPublicUrl(currentProfile?.avatar_url, AVATAR_BUCKET);
+    const path = avatarObjectPath(user.id, file.type);
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData.session?.access_token;
     if (!accessToken) {
       throw new Error("Not authenticated.");
     }
-
-    // Delete any existing object first; ignore 4xx (e.g. 400/404 when absent).
-    // Supabase storage's POST + x-upsert path was being rejected by RLS even
-    // with a valid JWT, so we replace upsert with explicit DELETE-then-INSERT.
-    await storageObjectRequest("DELETE", path, accessToken);
+    accessTokenForCleanup = accessToken;
 
     const uploadRes = await storageObjectRequest("POST", path, accessToken, {
       body: file,
@@ -528,6 +529,7 @@ export async function updateProfileAction(formData: FormData) {
 
     const { data: publicUrlData } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
     update.avatar_url = `${publicUrlData.publicUrl}?v=${Date.now()}`;
+    uploadedAvatarPath = path;
   } else {
     const rawUrl = readString(formData, "avatarUrl");
     const validated = validateAvatarUrl(rawUrl);
@@ -545,6 +547,15 @@ export async function updateProfileAction(formData: FormData) {
     throw new Error(profileError.message);
   }
 
+  if (
+    previousAvatarPath &&
+    uploadedAvatarPath &&
+    previousAvatarPath !== uploadedAvatarPath &&
+    accessTokenForCleanup
+  ) {
+    await storageObjectRequest("DELETE", previousAvatarPath, accessTokenForCleanup);
+  }
+
   revalidatePath("/settings");
   revalidatePath("/groups", "layout");
 }
@@ -559,7 +570,19 @@ export async function removeAvatarAction() {
   if (!accessToken) {
     throw new Error("Not authenticated.");
   }
-  await storageObjectRequest("DELETE", avatarObjectPath(user.id), accessToken);
+  const { data: currentProfile } = await supabase
+    .from("profiles")
+    .select("avatar_url")
+    .eq("id", user.id)
+    .maybeSingle();
+  const currentAvatarPath = avatarStoragePathFromPublicUrl(
+    currentProfile?.avatar_url,
+    AVATAR_BUCKET,
+  );
+
+  if (currentAvatarPath) {
+    await storageObjectRequest("DELETE", currentAvatarPath, accessToken);
+  }
 
   const { error } = await supabase
     .from("profiles")

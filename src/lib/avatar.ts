@@ -11,6 +11,64 @@ const AVATAR_PALETTE = [
   "#c75b1f",
 ];
 
+export function avatarExtensionForContentType(contentType: string): string {
+  if (!contentType) {
+    return "image";
+  }
+
+  const normalized = contentType.toLowerCase().split(";", 1)[0]?.trim();
+
+  switch (normalized) {
+    case "image/jpeg":
+    case "image/jpg":
+      return "jpg";
+    case "image/png":
+      return "png";
+    case "image/webp":
+      return "webp";
+    case "image/gif":
+      return "gif";
+    default:
+      return "image";
+  }
+}
+
+export function avatarObjectPath(userId: string, contentType: string, uniqueId = crypto.randomUUID()) {
+  // userId is always a Supabase auth UUID, but strip path separators defensively
+  // so a malformed value can never write outside the user's own folder.
+  const sanitizedUserId = userId.replace(/[/\\]/g, "-");
+  if (!sanitizedUserId) {
+    throw new Error("userId cannot be empty.");
+  }
+  return `${sanitizedUserId}/avatar-${uniqueId}.${avatarExtensionForContentType(contentType)}`;
+}
+
+export function avatarStoragePathFromPublicUrl(url: string | null | undefined, bucket = "avatars") {
+  if (!url) {
+    return null;
+  }
+
+  try {
+    const { pathname } = new URL(url);
+    const objectPrefix = `/storage/v1/object/public/${bucket}/`;
+    const imagePrefix = `/storage/v1/render/image/public/${bucket}/`;
+    const prefix = pathname.startsWith(objectPrefix)
+      ? objectPrefix
+      : pathname.startsWith(imagePrefix)
+        ? imagePrefix
+        : null;
+
+    if (!prefix) {
+      return null;
+    }
+
+    const path = decodeURIComponent(pathname.slice(prefix.length));
+    return path || null;
+  } catch {
+    return null;
+  }
+}
+
 export function validateAvatarUrl(input: string): string | null {
   const trimmed = input.trim();
   if (!trimmed) {

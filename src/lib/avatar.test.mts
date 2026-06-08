@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   AVATAR_URL_MAX_LENGTH,
+  avatarExtensionForContentType,
+  avatarObjectPath,
+  avatarStoragePathFromPublicUrl,
   colorForSeed,
   initialsFor,
   validateAvatarUrl,
@@ -46,4 +49,47 @@ test("colorForSeed is deterministic and spreads across the palette", () => {
   for (const color of colors) {
     assert.match(color, /^#[0-9a-f]{6}$/i);
   }
+});
+
+
+test("avatarObjectPath gives each upload a unique object path", () => {
+  assert.equal(avatarObjectPath("user-id", "image/png", "one"), "user-id/avatar-one.png");
+  assert.equal(avatarObjectPath("user-id", "image/jpeg", "two"), "user-id/avatar-two.jpg");
+  assert.notEqual(
+    avatarObjectPath("user-id", "image/png", "one"),
+    avatarObjectPath("user-id", "image/png", "two"),
+  );
+});
+
+test("avatarObjectPath strips path separators from userId", () => {
+  assert.equal(
+    avatarObjectPath("../../etc/passwd", "image/png", "one"),
+    "..-..-etc-passwd/avatar-one.png",
+  );
+  assert.throws(() => avatarObjectPath("", "image/png", "one"));
+});
+
+test("avatarExtensionForContentType maps common image types", () => {
+  assert.equal(avatarExtensionForContentType("image/jpeg"), "jpg");
+  assert.equal(avatarExtensionForContentType("image/png; charset=utf-8"), "png");
+  assert.equal(avatarExtensionForContentType("image/webp"), "webp");
+  assert.equal(avatarExtensionForContentType("image/svg+xml"), "image");
+  assert.equal(avatarExtensionForContentType(""), "image");
+});
+
+test("avatarStoragePathFromPublicUrl extracts Supabase public object paths", () => {
+  assert.equal(
+    avatarStoragePathFromPublicUrl(
+      "https://example.supabase.co/storage/v1/object/public/avatars/user-id/avatar-one.png?v=1",
+    ),
+    "user-id/avatar-one.png",
+  );
+  assert.equal(
+    avatarStoragePathFromPublicUrl(
+      "https://example.supabase.co/storage/v1/render/image/public/avatars/user-id/avatar-two.jpg",
+    ),
+    "user-id/avatar-two.jpg",
+  );
+  assert.equal(avatarStoragePathFromPublicUrl("https://example.com/avatar.png"), null);
+  assert.equal(avatarStoragePathFromPublicUrl("not a url"), null);
 });
