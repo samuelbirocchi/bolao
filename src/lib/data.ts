@@ -55,6 +55,31 @@ export type LeaderboardEntry = {
   winner_count: number;
 };
 
+export type MatchRankingRow = {
+  user_id: string;
+  match_id: string;
+  base_points: number;
+  bonus_points: number;
+  exact_score: boolean;
+  correct_winner: boolean;
+};
+
+export type RankingMatchMeta = {
+  id: string;
+  match_number: number;
+  kickoff_utc: string;
+  phase: string | null;
+  home_team_name: string;
+  away_team_name: string;
+  status: string;
+};
+
+export type MatchRankingData = {
+  scores: MatchRankingRow[];
+  members: LeaderboardEntry[];
+  matches: RankingMatchMeta[];
+};
+
 export type AdminMatch = {
   id: string;
   match_number: number;
@@ -232,6 +257,39 @@ export async function getLeaderboard(groupId: string): Promise<LeaderboardEntry[
     .order("joined_at", { ascending: true });
 
   return (data ?? []) as LeaderboardEntry[];
+}
+
+export async function getMatchRankingData(groupId: string): Promise<MatchRankingData> {
+  if (!hasSupabaseEnv()) {
+    return { scores: [], members: [], matches: [] };
+  }
+
+  const supabase = await createClient();
+  const [{ data: scores }, members, { data: matches }, { data: results }] = await Promise.all([
+    supabase
+      .from("match_prediction_scores")
+      .select("user_id, match_id, base_points, bonus_points, exact_score, correct_winner")
+      .eq("group_id", groupId),
+    getLeaderboard(groupId),
+    supabase
+      .from("matches")
+      .select("id, match_number, kickoff_utc, phase, home_team_name, away_team_name, status")
+      .order("kickoff_utc", { ascending: true })
+      .order("match_number", { ascending: true }),
+    supabase.from("match_results").select("match_id"),
+  ]);
+
+  // Only completed matches (those with a result) belong on the timeline. Derive
+  // the set from match_results so a completed match with zero predictions still
+  // appears (everyone carried forward at 0), not just matches present in scores.
+  const completedMatchIds = new Set((results ?? []).map((row) => row.match_id));
+  const completedMatches = (matches ?? []).filter((match) => completedMatchIds.has(match.id));
+
+  return {
+    scores: (scores ?? []) as MatchRankingRow[],
+    members,
+    matches: completedMatches as RankingMatchMeta[],
+  };
 }
 
 export async function getScoringSettings() {
