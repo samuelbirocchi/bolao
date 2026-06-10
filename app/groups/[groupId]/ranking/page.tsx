@@ -155,19 +155,33 @@ export default async function RankingPage({ params }: RankingPageProps) {
           <div className="grid three perf-grid">
             {performanceSorted.map((stat) => (
               <article className="perf-card" key={stat.userId}>
-                <div className="perf-card-head">
-                  <UserAvatar
-                    name={membersById.get(stat.userId)?.display_name ?? null}
-                    seed={stat.userId}
-                    url={membersById.get(stat.userId)?.avatar_url ?? null}
+                <details className="perf-detail">
+                  <summary>
+                    <div className="perf-card-head">
+                      <UserAvatar
+                        name={membersById.get(stat.userId)?.display_name ?? null}
+                        seed={stat.userId}
+                        url={membersById.get(stat.userId)?.avatar_url ?? null}
+                      />
+                      <div>
+                        <strong>{nameFor(stat.userId)}</strong>
+                        <p className="muted">
+                          {t.ranking.rank} {stat.currentRank} · {stat.currentPoints}{" "}
+                          {t.ranking.points}
+                        </p>
+                      </div>
+                    </div>
+                  </summary>
+                  <RankingChart
+                    steps={matchSteps}
+                    lines={matchLines}
+                    currentUserId={stat.userId}
+                    maxRank={maxRank}
+                    title={t.ranking.positionHistory}
+                    emptyLabel={t.ranking.noData}
+                    xAxisLabel={t.ranking.chartXAxisMatch}
                   />
-                  <div>
-                    <strong>{nameFor(stat.userId)}</strong>
-                    <p className="muted">
-                      {t.ranking.rank} {stat.currentRank} · {stat.currentPoints} {t.ranking.points}
-                    </p>
-                  </div>
-                </div>
+                </details>
                 <dl className="perf-stats">
                   <div>
                     <dt>{t.ranking.bestMatch}</dt>

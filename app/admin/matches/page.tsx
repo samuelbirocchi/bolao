@@ -1,8 +1,8 @@
+import { LocalKickoff } from "@/components/LocalKickoff";
 import { TeamName } from "@/components/TeamName";
 import { syncMatchesAction, syncOddsAction, updateMatchResultAction } from "@/lib/actions";
 import { requireGlobalAdmin } from "@/lib/auth";
 import { getAdminMatches } from "@/lib/data";
-import { formatKickoffForLocale } from "@/lib/i18n";
 import { getDictionary, getLocale } from "@/lib/i18n/server";
 
 function formatProbability(value: number | null, missing: string) {
@@ -42,7 +42,9 @@ export default async function AdminMatchesPage() {
                 <span className="muted">
                   {t.matches.match} {match.match_number} · {match.group_name ?? match.round}
                 </span>
-                <span className="muted">{formatKickoffForLocale(match.kickoff_utc, locale)}</span>
+                <span className="muted">
+                  <LocalKickoff iso={match.kickoff_utc} locale={locale} />
+                </span>
               </div>
               <div className="notice">
                 {t.adminMatches.odds}: {t.adminMatches.home}{" "}

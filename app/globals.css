@@ -640,6 +640,22 @@ label {
   gap: 0.8rem;
 }
 
+.match-form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.match-form-actions {
+  bottom: 0.75rem;
+  display: flex;
+  justify-content: flex-end;
+  position: sticky;
+}
+
+.match-form-actions button {
+  box-shadow: 0 6px 20px rgba(13, 122, 89, 0.28);
+}
+
 .match-card {
   border-radius: var(--radius);
   display: grid;
@@ -971,6 +987,25 @@ label {
   box-shadow: var(--shadow-soft);
   padding: 1.05rem;
   backdrop-filter: blur(16px) saturate(1.18);
+}
+
+.perf-detail {
+  margin-bottom: 0.85rem;
+}
+
+.perf-detail summary {
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.perf-detail summary .perf-card-head {
+  display: inline-flex;
+  margin-bottom: 0;
+  vertical-align: middle;
+}
+
+.perf-detail .ranking-chart {
+  margin: 0.85rem 0 0;
 }
 
 .perf-card-head {

@@ -8,6 +8,7 @@ import { avatarObjectPath, avatarStoragePathFromPublicUrl, validateAvatarUrl } f
 import { LOCALE_COOKIE, isLocale } from "@/lib/i18n";
 import { redeemInviteCode } from "@/lib/invites";
 import { buildOddsSnapshots, fetchWorldCupOdds } from "@/lib/odds";
+import { buildPredictionEntries } from "@/lib/predictions";
 import { fetchWc2026Matches } from "@/lib/schedule/wc2026";
 import { createClient, hasSupabaseEnv } from "@/lib/supabase/server";
 
@@ -245,6 +246,68 @@ export async function savePredictionAction(formData: FormData) {
     },
     { onConflict: "group_id,user_id,match_id" },
   );
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath(`/groups/${groupId}/matches`);
+}
+
+export async function saveAllPredictionsAction(formData: FormData) {
+  requireSupabaseConfig();
+  const { user } = await requireUser();
+  const groupId = readString(formData, "groupId");
+  const matchIds = readString(formData, "matchIds")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+
+  const entries = buildPredictionEntries(
+    matchIds.map((matchId) => ({
+      matchId,
+      home: readString(formData, `home-${matchId}`),
+      away: readString(formData, `away-${matchId}`),
+    })),
+  );
+
+  if (entries.length === 0) {
+    return;
+  }
+
+  const supabase = await createClient();
+  const { data: openMatches } = await supabase
+    .from("matches")
+    .select("id, kickoff_utc")
+    .in(
+      "id",
+      entries.map((entry) => entry.matchId),
+    );
+
+  const now = Date.now();
+  const unlocked = new Set(
+    (openMatches ?? [])
+      .filter((match) => new Date(match.kickoff_utc).getTime() > now)
+      .map((match) => match.id),
+  );
+
+  const rows = entries
+    .filter((entry) => unlocked.has(entry.matchId))
+    .map((entry) => ({
+      group_id: groupId,
+      match_id: entry.matchId,
+      user_id: user.id,
+      home_goals: entry.homeGoals,
+      away_goals: entry.awayGoals,
+    }));
+
+  if (rows.length === 0) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from("predictions")
+    .upsert(rows, { onConflict: "group_id,user_id,match_id" });
 
   if (error) {
     throw new Error(error.message);
