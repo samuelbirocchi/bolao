@@ -138,4 +138,17 @@ npm test
 npm run typecheck
 npm run lint
 npm run build
+npm run e2e
+npm run verify
 ```
+
+`npm run e2e` runs the Playwright smoke suite against a local Next.js dev
+server. Before the first local run, install the browser binary with:
+
+```bash
+npx playwright install chromium
+```
+
+Automation-created PRs should include `npm run verify` evidence. If browser
+installation or local runtime prerequisites are unavailable, do not open the PR
+until `npm run e2e` can run successfully.

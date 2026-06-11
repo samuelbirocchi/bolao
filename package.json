@@ -5,11 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "e2e": "playwright test",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --experimental-strip-types src/lib/*.test.mts",
     "typecheck": "tsc --noEmit",
-    "verify": "npm test && npm run typecheck && npm run lint && npm run build"
+    "verify": "npm test && npm run typecheck && npm run lint && npm run build && npm run e2e"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
@@ -19,6 +20,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.2",
