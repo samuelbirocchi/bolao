@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
+import { normalizeInviteCode } from "@/lib/authForms";
 import { redeemInviteCode } from "@/lib/invites";
 import { createClient } from "@/lib/supabase/server";
-
-const INVITE_CODE_PATTERN = /^[A-Z0-9]{1,32}$/;
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const error = requestUrl.searchParams.get("error_description") ?? requestUrl.searchParams.get("error");
-  const rawInvite = requestUrl.searchParams.get("invite")?.toUpperCase() ?? "";
-  const invite = INVITE_CODE_PATTERN.test(rawInvite) ? rawInvite : "";
+  const invite = normalizeInviteCode(requestUrl.searchParams.get("invite") ?? "");
 
   if (error) {
     return NextResponse.redirect(
@@ -32,10 +30,6 @@ export async function GET(request: Request) {
     );
   }
 
-  if (!invite) {
-    return NextResponse.redirect(new URL("/groups", requestUrl.origin));
-  }
-
   const userId = exchangeData.session?.user.id ?? exchangeData.user?.id;
 
   if (!userId) {
@@ -47,13 +41,33 @@ export async function GET(request: Request) {
     );
   }
 
-  const result = await redeemInviteCode(supabase, userId, invite);
+  let nextPath = "/groups";
 
-  if (!result.ok) {
-    return NextResponse.redirect(
-      new URL(`/groups?message=${encodeURIComponent(result.message)}`, requestUrl.origin),
-    );
+  if (invite) {
+    const result = await redeemInviteCode(supabase, userId, invite);
+
+    if (!result.ok) {
+      return NextResponse.redirect(
+        new URL(`/groups?message=${encodeURIComponent(result.message)}`, requestUrl.origin),
+      );
+    }
+
+    nextPath = `/groups/${result.groupId}`;
   }
 
-  return NextResponse.redirect(new URL(`/groups/${result.groupId}`, requestUrl.origin));
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("password_set_at")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (!profile?.password_set_at) {
+    const setupParams = new URLSearchParams({
+      setupPassword: "1",
+      next: nextPath,
+    });
+    return NextResponse.redirect(new URL(`/settings?${setupParams}`, requestUrl.origin));
+  }
+
+  return NextResponse.redirect(new URL(nextPath, requestUrl.origin));
 }

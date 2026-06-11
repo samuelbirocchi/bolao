@@ -1,4 +1,4 @@
-import { joinGroupAction, signInWithEmail } from "@/lib/actions";
+import { joinGroupAction, signInWithEmail, signInWithPasswordAction } from "@/lib/actions";
 import { getCurrentUser } from "@/lib/auth";
 import { getDictionary } from "@/lib/i18n/server";
 
@@ -26,15 +26,35 @@ export default async function JoinPage({ params, searchParams }: JoinPageProps) 
             <p>{t.joinGroup.signInPrompt}</p>
           </section>
 
-          <form className="card form-grid" action={signInWithEmail}>
-            {queryParams.message ? <div className="notice">{queryParams.message}</div> : null}
-            <input type="hidden" name="inviteCode" value={inviteCode} />
-            <label>
-              {t.login.email}
-              <input name="email" type="email" placeholder="you@example.com" required />
-            </label>
-            <button type="submit">{t.login.submit}</button>
-          </form>
+          <div className="stack">
+            <form className="card form-grid" action={signInWithPasswordAction}>
+              <h2>{t.login.passwordTitle}</h2>
+              {queryParams.message ? <div className="notice">{queryParams.message}</div> : null}
+              <input type="hidden" name="inviteCode" value={inviteCode} />
+              <label>
+                {t.login.email}
+                <input name="email" type="email" placeholder="you@example.com" required />
+              </label>
+              <label>
+                {t.login.password}
+                <input name="password" type="password" required />
+              </label>
+              <button type="submit">{t.login.submit}</button>
+            </form>
+
+            <form className="card form-grid" action={signInWithEmail}>
+              <h2>{t.login.setupTitle}</h2>
+              <p className="muted">{t.login.setupDescription}</p>
+              <input type="hidden" name="inviteCode" value={inviteCode} />
+              <label>
+                {t.login.email}
+                <input name="email" type="email" placeholder="you@example.com" required />
+              </label>
+              <button className="secondary" type="submit">
+                {t.login.setupSubmit}
+              </button>
+            </form>
+          </div>
         </div>
       </main>
     );

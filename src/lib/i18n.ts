@@ -55,9 +55,15 @@ export const dictionaries = {
     },
     login: {
       title: "Sign in",
-      description: "Use a magic link to access your World Cup pools.",
+      description:
+        "Sign in with your password, or request a setup link if you do not have one yet.",
       email: "Email",
-      submit: "Send magic link",
+      password: "Password",
+      passwordTitle: "Password sign in",
+      setupTitle: "No password yet?",
+      setupDescription: "Get a secure email link to enter and create your password.",
+      submit: "Sign in",
+      setupSubmit: "Send setup link",
     },
     groups: {
       title: "Groups",
@@ -97,7 +103,7 @@ export const dictionaries = {
       description: "Confirm the invite code to enter this World Cup pool.",
       code: "Invite code",
       submit: "Join group",
-      signInPrompt: "Sign in with a magic link to join this World Cup pool.",
+      signInPrompt: "Sign in with your password or request a setup link to join this World Cup pool.",
     },
     matches: {
       empty: "No matches are loaded yet. Ask a global admin to sync or add them.",
@@ -237,6 +243,12 @@ export const dictionaries = {
     settings: {
       title: "Profile settings",
       description: "Choose how your name and avatar appear on the leaderboard.",
+      passwordTitle: "Create your password",
+      passwordDescription:
+        "Create a password to keep your pool access available without email links.",
+      passwordLabel: "Password",
+      confirmPasswordLabel: "Confirm password",
+      passwordSubmit: "Save password",
       currentAvatar: "Current avatar",
       displayNameLabel: "Display name",
       avatarUrlLabel: "Avatar URL",
@@ -279,9 +291,14 @@ export const dictionaries = {
     },
     login: {
       title: "Entrar",
-      description: "Use um link mágico para acessar seus bolões da Copa.",
+      description: "Entre com sua senha ou solicite um link de configuração se ainda não tiver uma.",
       email: "Email",
-      submit: "Enviar link mágico",
+      password: "Senha",
+      passwordTitle: "Entrar com senha",
+      setupTitle: "Ainda não tem senha?",
+      setupDescription: "Receba um link seguro por email para entrar e criar sua senha.",
+      submit: "Entrar",
+      setupSubmit: "Enviar link de configuração",
     },
     groups: {
       title: "Grupos",
@@ -321,7 +338,7 @@ export const dictionaries = {
       description: "Confirme o código de convite para entrar neste bolão da Copa.",
       code: "Código de convite",
       submit: "Entrar no grupo",
-      signInPrompt: "Entre com um link mágico para participar deste bolão da Copa.",
+      signInPrompt: "Entre com sua senha ou solicite um link de configuração para participar deste bolão da Copa.",
     },
     matches: {
       empty: "Nenhum jogo foi carregado ainda. Peça para um administrador global sincronizar ou adicionar jogos.",
@@ -461,6 +478,12 @@ export const dictionaries = {
     settings: {
       title: "Configurações do perfil",
       description: "Escolha como seu nome e avatar aparecem na classificação.",
+      passwordTitle: "Crie sua senha",
+      passwordDescription:
+        "Crie uma senha para manter seu acesso ao bolão sem depender de links por email.",
+      passwordLabel: "Senha",
+      confirmPasswordLabel: "Confirmar senha",
+      passwordSubmit: "Salvar senha",
       currentAvatar: "Avatar atual",
       displayNameLabel: "Nome de exibição",
       avatarUrlLabel: "URL do avatar",
@@ -503,9 +526,15 @@ export const dictionaries = {
     },
     login: {
       title: "Iniciar sesión",
-      description: "Usa un enlace mágico para acceder a tus quinielas del Mundial.",
+      description:
+        "Inicia sesión con tu contraseña o solicita un enlace de configuración si aún no tienes una.",
       email: "Email",
-      submit: "Enviar enlace mágico",
+      password: "Contraseña",
+      passwordTitle: "Entrar con contraseña",
+      setupTitle: "¿Aún no tienes contraseña?",
+      setupDescription: "Recibe un enlace seguro por email para entrar y crear tu contraseña.",
+      submit: "Iniciar sesión",
+      setupSubmit: "Enviar enlace de configuración",
     },
     groups: {
       title: "Grupos",
@@ -545,7 +574,8 @@ export const dictionaries = {
       description: "Confirma el código de invitación para entrar en esta quiniela del Mundial.",
       code: "Código de invitación",
       submit: "Unirse al grupo",
-      signInPrompt: "Inicia sesión con un enlace mágico para unirte a esta quiniela del Mundial.",
+      signInPrompt:
+        "Inicia sesión con tu contraseña o solicita un enlace de configuración para unirte a esta quiniela del Mundial.",
     },
     matches: {
       empty: "Aún no hay partidos cargados. Pide a un administrador global que los sincronice o agregue.",
@@ -685,6 +715,12 @@ export const dictionaries = {
     settings: {
       title: "Ajustes de perfil",
       description: "Elige cómo aparecen tu nombre y avatar en la clasificación.",
+      passwordTitle: "Crea tu contraseña",
+      passwordDescription:
+        "Crea una contraseña para mantener tu acceso a la quiniela sin depender de enlaces por email.",
+      passwordLabel: "Contraseña",
+      confirmPasswordLabel: "Confirmar contraseña",
+      passwordSubmit: "Guardar contraseña",
       currentAvatar: "Avatar actual",
       displayNameLabel: "Nombre visible",
       avatarUrlLabel: "URL del avatar",

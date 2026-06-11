@@ -4,6 +4,11 @@ import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireGlobalAdmin, requireUser } from "@/lib/auth";
+import {
+  normalizeInviteCode,
+  safeInternalRedirectPath,
+  validatePasswordSetup,
+} from "@/lib/authForms";
 import { avatarObjectPath, avatarStoragePathFromPublicUrl, validateAvatarUrl } from "@/lib/avatar";
 import { LOCALE_COOKIE, isLocale } from "@/lib/i18n";
 import { redeemInviteCode } from "@/lib/invites";
@@ -15,8 +20,6 @@ import { createClient, hasSupabaseEnv } from "@/lib/supabase/server";
 const AVATAR_BUCKET = "avatars";
 const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 const DISPLAY_NAME_MAX_LENGTH = 80;
-
-const INVITE_CODE_PATTERN = /^[A-Z0-9]{1,32}$/;
 
 function requireSupabaseConfig() {
   if (!hasSupabaseEnv()) {
@@ -103,8 +106,7 @@ export async function signInWithEmail(formData: FormData) {
   requireSupabaseConfig();
 
   const email = readString(formData, "email");
-  const rawInviteCode = readString(formData, "inviteCode").toUpperCase();
-  const inviteCode = INVITE_CODE_PATTERN.test(rawInviteCode) ? rawInviteCode : "";
+  const inviteCode = normalizeInviteCode(readString(formData, "inviteCode"));
   const requestOrigin = (await headers()).get("origin");
   const origin =
     configuredSiteOrigin() ??
@@ -133,7 +135,95 @@ export async function signInWithEmail(formData: FormData) {
     redirect(`${formPath}?message=${encodeURIComponent(error.message)}`);
   }
 
-  redirect(`${formPath}?message=${encodeURIComponent("Check your email for a magic link")}`);
+  redirect(`${formPath}?message=${encodeURIComponent("Check your email for a sign-in/setup link")}`);
+}
+
+export async function signInWithPasswordAction(formData: FormData) {
+  requireSupabaseConfig();
+
+  const email = readString(formData, "email");
+  const password = readString(formData, "password");
+  const inviteCode = normalizeInviteCode(readString(formData, "inviteCode"));
+  const formPath = inviteCode ? `/groups/join/${inviteCode}` : "/login";
+
+  if (!email || !password) {
+    redirect(`${formPath}?message=${encodeURIComponent("Email and password are required")}`);
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error || !data.user) {
+    redirect(
+      `${formPath}?message=${encodeURIComponent(error?.message ?? "Could not sign in")}`,
+    );
+  }
+
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .update({ password_set_at: new Date().toISOString() })
+    .eq("id", data.user.id);
+
+  if (profileError) {
+    redirect(`${formPath}?message=${encodeURIComponent(profileError.message)}`);
+  }
+
+  if (!inviteCode) {
+    redirect("/groups");
+  }
+
+  const result = await redeemInviteCode(supabase, data.user.id, inviteCode);
+
+  if (!result.ok) {
+    redirect(`/groups?message=${encodeURIComponent(result.message)}`);
+  }
+
+  redirect(`/groups/${result.groupId}`);
+}
+
+export async function createPasswordAction(formData: FormData) {
+  requireSupabaseConfig();
+  const { user } = await requireUser();
+
+  const password = readString(formData, "password");
+  const confirmation = readString(formData, "confirmPassword");
+  const nextPath = safeInternalRedirectPath(readString(formData, "next"));
+  const validation = validatePasswordSetup(password, confirmation);
+
+  if (!validation.ok) {
+    redirect(
+      `/settings?setupPassword=1&next=${encodeURIComponent(nextPath)}&message=${encodeURIComponent(
+        validation.message,
+      )}`,
+    );
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    redirect(
+      `/settings?setupPassword=1&next=${encodeURIComponent(nextPath)}&message=${encodeURIComponent(
+        error.message,
+      )}`,
+    );
+  }
+
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .update({ password_set_at: new Date().toISOString() })
+    .eq("id", user.id);
+
+  if (profileError) {
+    redirect(
+      `/settings?setupPassword=1&next=${encodeURIComponent(nextPath)}&message=${encodeURIComponent(
+        profileError.message,
+      )}`,
+    );
+  }
+
+  revalidatePath("/settings");
+  redirect(nextPath);
 }
 
 export async function signOut() {
