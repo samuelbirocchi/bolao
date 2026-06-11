@@ -48,7 +48,18 @@ npm test
 npm run typecheck
 npm run lint
 npm run build
+npm run e2e
 ```
+
+Before the first local e2e run, install the Playwright browser binary:
+
+```bash
+npx playwright install chromium
+```
+
+`npm run verify` runs this full sequence, including the Playwright smoke test.
+Automation-created PRs should only be opened after `npm run verify` passes, or
+after explicitly documenting why the e2e prerequisite cannot run.
 
 ## Deploy flow
 
