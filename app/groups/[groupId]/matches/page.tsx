@@ -16,6 +16,21 @@ function formatProbability(value: number | null) {
   return value === null ? "—" : `${Math.round(value * 100)}%`;
 }
 
+function formatStatsShare(count: number, total: number, locale: string) {
+  if (total === 0) {
+    return "0%";
+  }
+
+  return new Intl.NumberFormat(locale, {
+    maximumFractionDigits: 1,
+    style: "percent",
+  }).format(count / total);
+}
+
+function statsBarWidth(count: number, total: number) {
+  return total === 0 ? "0%" : `${Math.max(2, Math.round((count / total) * 100))}%`;
+}
+
 function formatResolution(
   resolution: string | null,
   labels: { afterExtraTime: string; onPenalties: string },
@@ -82,6 +97,30 @@ export default async function MatchesPage({ params }: MatchesPageProps) {
                 match.away_team_name,
                 match.away_team_placeholder ?? t.matches.fallbackTeam,
               );
+              const predictionStats =
+                locked && match.prediction_stats && match.prediction_stats.total > 0
+                  ? match.prediction_stats
+                  : null;
+              const outcomeRows = predictionStats
+                ? [
+                    {
+                      className: "home",
+                      count: predictionStats.outcomes.home,
+                      label: homeName,
+                    },
+                    {
+                      className: "draw",
+                      count: predictionStats.outcomes.draw,
+                      label: t.matches.draw,
+                    },
+                    {
+                      className: "away",
+                      count: predictionStats.outcomes.away,
+                      label: awayName,
+                    },
+                  ]
+                : [];
+              const commonScorelines = predictionStats?.scorelines.slice(0, 5) ?? [];
 
               return (
                 <article className="match-card" key={match.id}>
@@ -156,6 +195,75 @@ export default async function MatchesPage({ params }: MatchesPageProps) {
                     </label>
                     {locked ? <span className="muted">{t.matches.locked}</span> : null}
                   </div>
+
+                  {predictionStats ? (
+                    <section className="prediction-stats" aria-label={t.matches.statistics}>
+                      <div className="prediction-stats-head">
+                        <div>
+                          <strong>{t.matches.statistics}</strong>
+                          <p className="muted">
+                            {t.matches.statsDescription.replace(
+                              "{count}",
+                              String(predictionStats.total),
+                            )}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="prediction-stats-grid">
+                        <div>
+                          <h3>{t.matches.winnerStats}</h3>
+                          <div className="stat-bars">
+                            {outcomeRows.map((row) => (
+                              <div className="stat-bar-row" key={row.label}>
+                                <span>{row.label}</span>
+                                <div className="stat-bar-track" aria-hidden="true">
+                                  <span
+                                    className={`stat-bar-fill ${row.className}`}
+                                    style={{ width: statsBarWidth(row.count, predictionStats.total) }}
+                                  />
+                                </div>
+                                <strong>{formatStatsShare(row.count, predictionStats.total, locale)}</strong>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <h3>{t.matches.commonScores}</h3>
+                          {commonScorelines.length > 0 ? (
+                            <div className="stat-bars">
+                              {commonScorelines.map((scoreline) => (
+                                <div
+                                  className="stat-bar-row"
+                                  key={`${scoreline.homeGoals}-${scoreline.awayGoals}`}
+                                >
+                                  <span>
+                                    {scoreline.homeGoals} x {scoreline.awayGoals}
+                                  </span>
+                                  <div className="stat-bar-track" aria-hidden="true">
+                                    <span
+                                      className="stat-bar-fill scoreline"
+                                      style={{
+                                        width: statsBarWidth(scoreline.count, predictionStats.total),
+                                      }}
+                                    />
+                                  </div>
+                                  <strong>
+                                    {formatStatsShare(scoreline.count, predictionStats.total, locale)}
+                                  </strong>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="muted">{t.matches.noStats}</p>
+                          )}
+                        </div>
+                      </div>
+                    </section>
+                  ) : locked ? (
+                    <div className="notice">{t.matches.noStats}</div>
+                  ) : null}
                 </article>
               );
             })}

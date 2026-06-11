@@ -1,5 +1,10 @@
 import { createClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { defaultScoreWeights } from "@/lib/scoring";
+import {
+  buildMatchPredictionStats,
+  type MatchPredictionStats,
+  type PredictionStatsInput,
+} from "@/lib/prediction-stats";
 
 export type GroupSummary = {
   id: string;
@@ -40,6 +45,7 @@ export type MatchWithPrediction = {
   odds_home_win_probability: number | null;
   odds_draw_probability: number | null;
   odds_away_win_probability: number | null;
+  prediction_stats: MatchPredictionStats | null;
 };
 
 export type LeaderboardEntry = {
@@ -193,8 +199,13 @@ export async function getMatchesWithPredictions(
   }
 
   const supabase = await createClient();
-  const [{ data: matches }, { data: predictions }, { data: results }, { data: oddsSnapshots }] =
-    await Promise.all([
+  const [
+    { data: matches },
+    { data: predictions },
+    { data: groupPredictions },
+    { data: results },
+    { data: oddsSnapshots },
+  ] = await Promise.all([
       supabase
         .from("matches")
         .select(
@@ -208,6 +219,10 @@ export async function getMatchesWithPredictions(
         .eq("group_id", groupId)
         .eq("user_id", userId),
       supabase
+        .from("predictions")
+        .select("match_id, home_goals, away_goals")
+        .eq("group_id", groupId),
+      supabase
         .from("match_results")
         .select("match_id, home_goals, away_goals, home_penalties, away_penalties, resolution"),
       supabase
@@ -216,6 +231,10 @@ export async function getMatchesWithPredictions(
           "match_id, captured_at, home_win_probability, draw_probability, away_win_probability",
         ),
     ]);
+
+  const predictionStatsByMatch = buildMatchPredictionStats(
+    (groupPredictions ?? []) as PredictionStatsInput[],
+  );
 
   return (matches ?? []).map((match) => {
     const prediction = predictions?.find((item) => item.match_id === match.id);
@@ -235,6 +254,7 @@ export async function getMatchesWithPredictions(
       odds_home_win_probability: odds?.home_win_probability ?? null,
       odds_draw_probability: odds?.draw_probability ?? null,
       odds_away_win_probability: odds?.away_win_probability ?? null,
+      prediction_stats: predictionStatsByMatch[match.id] ?? null,
     };
   }) as MatchWithPrediction[];
 }
