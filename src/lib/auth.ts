@@ -5,6 +5,7 @@ export type CurrentProfile = {
   id: string;
   display_name: string | null;
   is_global_admin: boolean;
+  password_set_at: string | null;
 };
 
 export async function getCurrentUser() {
@@ -23,7 +24,7 @@ export async function getCurrentUser() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, display_name, is_global_admin")
+    .select("id, display_name, is_global_admin, password_set_at")
     .eq("id", user.id)
     .single();
 
