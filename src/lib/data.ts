@@ -1,10 +1,12 @@
 import { createClient, hasSupabaseEnv } from "@/lib/supabase/server";
-import { defaultScoreWeights } from "@/lib/scoring";
+import { defaultScoreWeights, type MatchResolution } from "@/lib/scoring";
 import {
   buildMatchPredictionStats,
   type MatchPredictionStats,
   type PredictionStatsInput,
 } from "@/lib/prediction-stats";
+import { buildLiveMatchView, type LiveMatchView } from "@/lib/liveMatch";
+import type { RankingMatch, RankingMember, RankingScore } from "@/lib/ranking";
 
 export type GroupSummary = {
   id: string;
@@ -84,6 +86,11 @@ export type MatchRankingData = {
   scores: MatchRankingRow[];
   members: LeaderboardEntry[];
   matches: RankingMatchMeta[];
+};
+
+export type ClosedMatchDetail = {
+  match: MatchWithPrediction;
+  view: LiveMatchView;
 };
 
 export type AdminMatch = {
@@ -346,6 +353,151 @@ export async function getScoringSettings() {
       data?.extra_time_bonus_points ?? defaultScoreWeights.extraTimeBonusPoints,
     penaltiesBonusPoints:
       data?.penalties_bonus_points ?? defaultScoreWeights.penaltiesBonusPoints,
+  };
+}
+
+export async function getClosedMatchDetail(
+  groupId: string,
+  matchId: string,
+  currentUserId: string,
+): Promise<ClosedMatchDetail | null> {
+  if (!hasSupabaseEnv()) {
+    return null;
+  }
+
+  const supabase = await createClient();
+  const { data: match } = await supabase
+    .from("matches")
+    .select(
+      "id, match_number, round, group_name, home_team_name, away_team_name, home_team_placeholder, away_team_placeholder, stadium, kickoff_utc, status, phase",
+    )
+    .eq("id", matchId)
+    .maybeSingle();
+
+  if (!match || new Date(match.kickoff_utc).getTime() > Date.now()) {
+    return null;
+  }
+
+  const [
+    { data: predictions },
+    { data: currentResult },
+    { data: odds },
+    { data: memberships },
+    { data: allMatches },
+    { data: allResults },
+    { data: allScores },
+    weights,
+  ] = await Promise.all([
+    supabase
+      .from("predictions")
+      .select("user_id, home_goals, away_goals")
+      .eq("group_id", groupId)
+      .eq("match_id", matchId),
+    supabase
+      .from("match_results")
+      .select("match_id, home_goals, away_goals, home_penalties, away_penalties, resolution")
+      .eq("match_id", matchId)
+      .maybeSingle(),
+    supabase
+      .from("match_odds_snapshots")
+      .select("match_id, captured_at, home_win_probability, draw_probability, away_win_probability")
+      .eq("match_id", matchId)
+      .maybeSingle(),
+    supabase.from("group_memberships").select("user_id, joined_at").eq("group_id", groupId),
+    supabase
+      .from("matches")
+      .select("id, match_number, kickoff_utc, phase, home_team_name, away_team_name, status")
+      .order("kickoff_utc", { ascending: true })
+      .order("match_number", { ascending: true }),
+    supabase.from("match_results").select("match_id"),
+    supabase
+      .from("match_prediction_scores")
+      .select("user_id, match_id, base_points, bonus_points, exact_score, correct_winner")
+      .eq("group_id", groupId),
+    getScoringSettings(),
+  ]);
+
+  const memberIds = (memberships ?? []).map((membership) => membership.user_id);
+  const { data: profiles } =
+    memberIds.length > 0
+      ? await supabase.from("profiles").select("id, display_name, avatar_url").in("id", memberIds)
+      : { data: [] };
+  const profilesById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+  const members: RankingMember[] = (memberships ?? []).map((membership) => {
+    const profile = profilesById.get(membership.user_id);
+    return {
+      user_id: membership.user_id,
+      display_name: profile?.display_name ?? null,
+      avatar_url: profile?.avatar_url ?? null,
+      joined_at: membership.joined_at,
+    };
+  });
+
+  const resultMatchIds = new Set((allResults ?? []).map((result) => result.match_id));
+  const currentKickoff = new Date(match.kickoff_utc).getTime();
+  const previousMatches = ((allMatches ?? []) as RankingMatch[]).filter(
+    (item) =>
+      item.id !== matchId &&
+      resultMatchIds.has(item.id) &&
+      new Date(item.kickoff_utc).getTime() < currentKickoff,
+  );
+  const previousMatchIds = new Set(previousMatches.map((item) => item.id));
+  const previousScores = ((allScores ?? []) as RankingScore[]).filter((score) =>
+    previousMatchIds.has(score.match_id),
+  );
+  const result =
+    currentResult?.home_goals !== null &&
+    currentResult?.home_goals !== undefined &&
+    currentResult.away_goals !== null &&
+    currentResult.away_goals !== undefined
+      ? {
+          homeGoals: currentResult.home_goals,
+          awayGoals: currentResult.away_goals,
+          homePenalties: currentResult.home_penalties,
+          awayPenalties: currentResult.away_penalties,
+          resolution: currentResult.resolution as MatchResolution,
+        }
+      : null;
+  const currentPrediction = predictions?.find((prediction) => prediction.user_id === currentUserId);
+  const view = buildLiveMatchView({
+    currentMatch: {
+      id: match.id,
+      match_number: match.match_number,
+      kickoff_utc: match.kickoff_utc,
+      phase: match.phase,
+      home_team_name: match.home_team_name,
+      away_team_name: match.away_team_name,
+    },
+    currentUserId,
+    members,
+    predictions: predictions ?? [],
+    previousMatches,
+    previousScores,
+    probabilities: {
+      homeWinProbability: odds?.home_win_probability ?? null,
+      drawProbability: odds?.draw_probability ?? null,
+      awayWinProbability: odds?.away_win_probability ?? null,
+    },
+    result,
+    weights,
+  });
+
+  return {
+    match: {
+      ...match,
+      prediction_home_goals: currentPrediction?.home_goals ?? null,
+      prediction_away_goals: currentPrediction?.away_goals ?? null,
+      result_home_goals: currentResult?.home_goals ?? null,
+      result_away_goals: currentResult?.away_goals ?? null,
+      result_home_penalties: currentResult?.home_penalties ?? null,
+      result_away_penalties: currentResult?.away_penalties ?? null,
+      result_resolution: currentResult?.resolution ?? null,
+      odds_captured_at: odds?.captured_at ?? null,
+      odds_home_win_probability: odds?.home_win_probability ?? null,
+      odds_draw_probability: odds?.draw_probability ?? null,
+      odds_away_win_probability: odds?.away_win_probability ?? null,
+    } as MatchWithPrediction,
+    view,
   };
 }
 
