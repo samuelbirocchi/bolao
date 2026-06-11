@@ -4,9 +4,10 @@ import { TeamName } from "@/components/TeamName";
 import { notFound } from "next/navigation";
 import { saveAllPredictionsAction } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
-import { getGroupDetail, getMatchesWithPredictions } from "@/lib/data";
+import { getGroupDetail, getMatchesWithPredictions, getScoringSettings } from "@/lib/data";
 import { displayName } from "@/lib/format";
 import { getDictionary, getLocale } from "@/lib/i18n/server";
+import { calculateBasePoints, type ScoreWeights } from "@/lib/scoring";
 
 type MatchesPageProps = {
   params: Promise<{ groupId: string }>;
@@ -31,6 +32,14 @@ function statsBarWidth(count: number, total: number) {
   return total === 0 ? "0%" : `${Math.max(2, Math.round((count / total) * 100))}%`;
 }
 
+function formatVictoryPoints(
+  probability: number | null,
+  weights: ScoreWeights,
+  label: string,
+) {
+  return label.replace("{points}", String(calculateBasePoints(probability, weights)));
+}
+
 function formatResolution(
   resolution: string | null,
   labels: { afterExtraTime: string; onPenalties: string },
@@ -49,9 +58,10 @@ function formatResolution(
 export default async function MatchesPage({ params }: MatchesPageProps) {
   const { user } = await requireUser();
   const { groupId } = await params;
-  const [group, matches, locale, t] = await Promise.all([
+  const [group, matches, scoring, locale, t] = await Promise.all([
     getGroupDetail(groupId, user.id),
     getMatchesWithPredictions(groupId, user.id),
+    getScoringSettings(),
     getLocale(),
     getDictionary(),
   ]);
@@ -173,6 +183,13 @@ export default async function MatchesPage({ params }: MatchesPageProps) {
                   <div className="score-inputs">
                     <label>
                       <TeamName canonicalName={match.home_team_name} name={homeName} />
+                      <span className="prediction-points">
+                        {formatVictoryPoints(
+                          match.odds_home_win_probability,
+                          scoring,
+                          t.matches.victoryPoints,
+                        )}
+                      </span>
                       <input
                         aria-label={`${homeName} ${t.matches.goals}`}
                         defaultValue={match.prediction_home_goals ?? ""}
@@ -184,6 +201,13 @@ export default async function MatchesPage({ params }: MatchesPageProps) {
                     </label>
                     <label>
                       <TeamName canonicalName={match.away_team_name} name={awayName} />
+                      <span className="prediction-points">
+                        {formatVictoryPoints(
+                          match.odds_away_win_probability,
+                          scoring,
+                          t.matches.victoryPoints,
+                        )}
+                      </span>
                       <input
                         aria-label={`${awayName} ${t.matches.goals}`}
                         defaultValue={match.prediction_away_goals ?? ""}
