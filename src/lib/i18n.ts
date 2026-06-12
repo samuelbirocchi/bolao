@@ -128,6 +128,7 @@ export const dictionaries = {
       winnerStats: "Winner",
       commonScores: "Most common scores",
       noStats: "No locked predictions yet.",
+      victoryPoints: "Win: {points} pts",
     },
     leaderboard: {
       title: "Leaderboard",
@@ -369,6 +370,7 @@ export const dictionaries = {
       winnerStats: "Vencedor",
       commonScores: "Resultados mais comuns",
       noStats: "Nenhum palpite travado ainda.",
+      victoryPoints: "Vitória: {points} pts",
     },
     leaderboard: {
       title: "Classificação",
@@ -612,6 +614,7 @@ export const dictionaries = {
       winnerStats: "Ganador",
       commonScores: "Resultados más comunes",
       noStats: "Aún no hay predicciones bloqueadas.",
+      victoryPoints: "Victoria: {points} pts",
     },
     leaderboard: {
       title: "Clasificación",
