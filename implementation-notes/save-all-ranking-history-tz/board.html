@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="corporate">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitHub issues #5 &amp; #6 + client-timezone kickoff display — implementation board</title>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.24/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-base-200">
+  <main class="container mx-auto p-6 max-w-4xl pb-28">
+    <header class="mb-6">
+      <div class="flex items-center gap-3 flex-wrap">
+        <h1 class="text-3xl font-bold">GitHub issues #5 &amp; #6 + client-timezone kickoff display</h1>
+        <span class="badge badge-success">done</span>
+      </div>
+      <p class="mt-2 opacity-80">Three changes to the World Cup pool app: (#5) replace per-match Save buttons with one &#x27;Save all predictions&#x27; form; (#6) make every ranking participant card expandable to show that participant&#x27;s position-history chart; and display kickoff times in the client&#x27;s timezone.</p>
+      <p class="text-xs opacity-50 mt-1">updated 2026-06-10T02:00</p>
+    </header>
+
+    <section class="mb-6"><div class="alert">No open questions yet. The agent will post here when it needs your input.</div></section>
+
+    
+    <details class="collapse collapse-arrow bg-base-100 shadow mb-4" open>
+      <summary class="collapse-title text-lg font-bold">🧭 Decisions <span class="badge badge-ghost badge-sm ml-2">3</span></summary>
+      <div class="collapse-content">
+    <div class="mb-3 pb-3 border-b border-base-300 last:border-0">
+      <p class="font-medium">Single Save-all button, sticky at the bottom</p>
+      <p class="text-sm">One submit button (no top duplicate). Made it position:sticky at the bottom of the form so it stays reachable on a long match list without scrolling to the very end. Disabled when there are zero unlocked matches.</p>
+      <p class="text-sm opacity-70 mt-1"><span class="font-medium">Why:</span> Plan offered an optional sticky duplicate at the top; a single sticky-bottom button is simpler and better UX for a long list. Locked matches&#x27; inputs are disabled (not submitted); the button is the only control.</p>
+      <input type="text" data-comment-for="d1" value=""
+        class="input input-bordered input-xs w-full mt-2"
+        placeholder="Add a comment to change or push back on this..." />
+    </div>
+    <div class="mb-3 pb-3 border-b border-base-300 last:border-0">
+      <p class="font-medium">Extract parse/filter into pure buildPredictionEntries()</p>
+      <p class="text-sm">New src/lib/predictions.ts holds buildPredictionEntries(rawPairs) returning validated {matchId, homeGoals, awayGoals}[]; the action reads FormData into raw pairs then calls it. Covered by src/lib/predictions.test.mts.</p>
+      <p class="text-sm opacity-70 mt-1"><span class="font-medium">Why:</span> Satisfies the &#x27;behavioral change needs tests&#x27; rule with a pure, testable unit; keeps the action thin.</p>
+      <input type="text" data-comment-for="d2" value=""
+        class="input input-bordered input-xs w-full mt-2"
+        placeholder="Add a comment to change or push back on this..." />
+    </div>
+    <div class="mb-3 pb-3 border-b border-base-300 last:border-0">
+      <p class="font-medium">LocalKickoff client component with SSR-stable fallback</p>
+      <p class="text-sm">New &#x27;use client&#x27; component renders &lt;time&gt; with the server (UTC) format as initial state, then reformats in useEffect using the browser timezone. suppressHydrationWarning avoids a mismatch warning.</p>
+      <p class="text-sm opacity-70 mt-1"><span class="font-medium">Why:</span> Only way Intl can pick up the client&#x27;s timezone; keeps SSR deterministic. Stored data stays UTC; only display changes. Lock/scoring compare absolute instants, unaffected.</p>
+      <input type="text" data-comment-for="d3" value=""
+        class="input input-bordered input-xs w-full mt-2"
+        placeholder="Add a comment to change or push back on this..." />
+    </div></div>
+    </details>
+    
+    <details class="collapse collapse-arrow bg-base-100 shadow mb-4" open>
+      <summary class="collapse-title text-lg font-bold">↪️ Deviations from spec <span class="badge badge-ghost badge-sm ml-2">1</span></summary>
+      <div class="collapse-content">
+    <div class="mb-3 pb-3 border-b border-base-300 last:border-0">
+      <p class="font-medium">Locked matches show a &#x27;Locked&#x27; label instead of a disabled button</p>
+      <p class="text-sm">Per-match Save buttons are gone (issue #5). For locked matches the score inputs are disabled and a small &#x27;Locked&#x27; text marker is shown in their place, so the locked state stays visible.</p>
+      <p class="text-sm opacity-70 mt-1"><span class="font-medium">Why:</span> Preserves the prior visual signal that a match is locked now that the per-row button (which previously read &#x27;Locked&#x27;) no longer exists.</p>
+      <input type="text" data-comment-for="dv1" value=""
+        class="input input-bordered input-xs w-full mt-2"
+        placeholder="Add a comment to change or push back on this..." />
+    </div></div>
+    </details>
+    
+    <details class="collapse collapse-arrow bg-base-100 shadow mb-4" open>
+      <summary class="collapse-title text-lg font-bold">⚖️ Tradeoffs <span class="badge badge-ghost badge-sm ml-2">2</span></summary>
+      <div class="collapse-content">
+    <div class="mb-3 pb-3 border-b border-base-300 last:border-0">
+      <p class="font-medium">Full RankingChart (all lines) per participant card</p>
+      <p class="text-sm">Each expandable card renders the complete by-match chart emphasizing that participant, rather than a single-line chart. Charts sit inside collapsed &lt;details&gt; so DOM cost is low.</p>
+      
+      <input type="text" data-comment-for="t1" value=""
+        class="input input-bordered input-xs w-full mt-2"
+        placeholder="Add a comment to change or push back on this..." />
+    </div>
+    <div class="mb-3 pb-3 border-b border-base-300 last:border-0">
+      <p class="font-medium">#6 expanded-chart not exercised with live data</p>
+      <p class="text-sm">No group in the connected Supabase has any completed match (all WC2026 fixtures are future-dated), so the Performance section is empty everywhere and the new &lt;details&gt; charts have no data to render. Match results are GLOBAL (shared by all groups, read by production), so seeding a fake result to populate the chart would inject it into a real 19-member pool — not safe. Verified instead: build/typecheck/lint pass, the empty-state path renders cleanly without crashing, and the chart itself is the unchanged, already-tested RankingChart component (only new inputs are currentUserId=participant and a &lt;details&gt; wrapper).</p>
+      
+      <input type="text" data-comment-for="t2" value=""
+        class="input input-bordered input-xs w-full mt-2"
+        placeholder="Add a comment to change or push back on this..." />
+    </div></div>
+    </details>
+
+    
+    
+    <details class="collapse collapse-arrow bg-base-100 shadow mb-4">
+      <summary class="collapse-title text-lg font-bold">🪵 Activity log</summary>
+      <div class="collapse-content"><ul class="space-y-1 text-sm"><li><span class="opacity-50 text-xs mr-2">01:55</span>#6: no completed-match data exists; Performance/empty-state renders cleanly but expandable charts could not be populated without polluting a live shared pool (global results). See tradeoff t2. Restored English locale.</li><li><span class="opacity-50 text-xs mr-2">01:40</span>Visual check on localhost:3100 (real Supabase, logged in). #5: single &#x27;Save all&#x27; button, no per-match buttons; saved Mexico 2-1 SA, left match 2 blank -&gt; reload confirmed only filled match persisted (blank skipped). TZ: kickoff times render via LocalKickoff (local zone), no hydration/console errors on matches + admin/matches. Locales: Save all / Salvar tudo / Guardar todo all correct.</li><li><span class="opacity-50 text-xs mr-2">01:00</span>npm run verify passed; 38 tests pass (incl. 5 new prediction tests).</li><li><span class="opacity-50 text-xs mr-2">00:50</span>TZ: added LocalKickoff client component, wired into matches + admin/matches pages.</li><li><span class="opacity-50 text-xs mr-2">00:45</span>#6: perf-card -&gt; &lt;details&gt; + RankingChart per participant, positionHistory i18n, .perf-detail CSS.</li><li><span class="opacity-50 text-xs mr-2">00:30</span>#5: added src/lib/predictions.ts + test, saveAllPredictionsAction, rewrote matches/page.tsx to one form, saveAll i18n, .match-form CSS.</li><li><span class="opacity-50 text-xs mr-2">00:00</span>Read current matches/ranking/admin pages, actions, i18n, RankingChart, CSS. Created board.</li></ul></div>
+    </details>
+
+    <section class="card bg-base-100 shadow mb-4">
+      <div class="card-body p-4">
+        <h2 class="text-lg font-bold">💬 Anything else for the agent?</h2>
+        <textarea data-role="general-note" rows="3" class="textarea textarea-bordered w-full"
+          placeholder="Free-form message: redirect, extra context, a constraint you forgot to mention..."></textarea>
+      </div>
+    </section>
+  </main>
+
+  <div class="btm-nav btm-nav-md bg-base-100 border-t border-base-300">
+    <button class="btn btn-primary btn-wide mx-auto my-2" onclick="exportAnswers()">
+      ⬇️ Export answers
+    </button>
+  </div>
+
+  <dialog id="export_done" class="modal">
+    <div class="modal-box">
+      <h3 class="font-bold text-lg">Answers exported ✅</h3>
+      <p class="py-3">Downloaded <code id="export_filename"></code> to your Downloads folder.
+      Go back to Claude and say <b>continue</b> (or "I answered") — it will read your responses and pick the work back up.</p>
+      <div class="modal-action"><form method="dialog"><button class="btn">Got it</button></form></div>
+    </div>
+  </dialog>
+
+  <script>
+    const STATE = {"feature": "GitHub issues #5 & #6 + client-timezone kickoff display", "slug": "save-all-ranking-history-tz", "status": "done", "updated": "2026-06-10T02:00", "summary": "Three changes to the World Cup pool app: (#5) replace per-match Save buttons with one 'Save all predictions' form; (#6) make every ranking participant card expandable to show that participant's position-history chart; and display kickoff times in the client's timezone.", "sections": {"decisions": [{"id": "d1", "title": "Single Save-all button, sticky at the bottom", "detail": "One submit button (no top duplicate). Made it position:sticky at the bottom of the form so it stays reachable on a long match list without scrolling to the very end. Disabled when there are zero unlocked matches.", "rationale": "Plan offered an optional sticky duplicate at the top; a single sticky-bottom button is simpler and better UX for a long list. Locked matches' inputs are disabled (not submitted); the button is the only control."}, {"id": "d2", "title": "Extract parse/filter into pure buildPredictionEntries()", "detail": "New src/lib/predictions.ts holds buildPredictionEntries(rawPairs) returning validated {matchId, homeGoals, awayGoals}[]; the action reads FormData into raw pairs then calls it. Covered by src/lib/predictions.test.mts.", "rationale": "Satisfies the 'behavioral change needs tests' rule with a pure, testable unit; keeps the action thin."}, {"id": "d3", "title": "LocalKickoff client component with SSR-stable fallback", "detail": "New 'use client' component renders <time> with the server (UTC) format as initial state, then reformats in useEffect using the browser timezone. suppressHydrationWarning avoids a mismatch warning.", "rationale": "Only way Intl can pick up the client's timezone; keeps SSR deterministic. Stored data stays UTC; only display changes. Lock/scoring compare absolute instants, unaffected."}], "deviations": [{"id": "dv1", "title": "Locked matches show a 'Locked' label instead of a disabled button", "detail": "Per-match Save buttons are gone (issue #5). For locked matches the score inputs are disabled and a small 'Locked' text marker is shown in their place, so the locked state stays visible.", "rationale": "Preserves the prior visual signal that a match is locked now that the per-row button (which previously read 'Locked') no longer exists."}], "tradeoffs": [{"id": "t1", "title": "Full RankingChart (all lines) per participant card", "detail": "Each expandable card renders the complete by-match chart emphasizing that participant, rather than a single-line chart. Charts sit inside collapsed <details> so DOM cost is low."}, {"id": "t2", "title": "#6 expanded-chart not exercised with live data", "detail": "No group in the connected Supabase has any completed match (all WC2026 fixtures are future-dated), so the Performance section is empty everywhere and the new <details> charts have no data to render. Match results are GLOBAL (shared by all groups, read by production), so seeding a fake result to populate the chart would inject it into a real 19-member pool \u2014 not safe. Verified instead: build/typecheck/lint pass, the empty-state path renders cleanly without crashing, and the chart itself is the unchanged, already-tested RankingChart component (only new inputs are currentUserId=participant and a <details> wrapper)."}]}, "questions": [], "files": [], "log": [{"ts": "00:00", "entry": "Read current matches/ranking/admin pages, actions, i18n, RankingChart, CSS. Created board."}, {"ts": "00:30", "entry": "#5: added src/lib/predictions.ts + test, saveAllPredictionsAction, rewrote matches/page.tsx to one form, saveAll i18n, .match-form CSS."}, {"ts": "00:45", "entry": "#6: perf-card -> <details> + RankingChart per participant, positionHistory i18n, .perf-detail CSS."}, {"ts": "00:50", "entry": "TZ: added LocalKickoff client component, wired into matches + admin/matches pages."}, {"ts": "01:00", "entry": "npm run verify passed; 38 tests pass (incl. 5 new prediction tests)."}, {"ts": "01:40", "entry": "Visual check on localhost:3100 (real Supabase, logged in). #5: single 'Save all' button, no per-match buttons; saved Mexico 2-1 SA, left match 2 blank -> reload confirmed only filled match persisted (blank skipped). TZ: kickoff times render via LocalKickoff (local zone), no hydration/console errors on matches + admin/matches. Locales: Save all / Salvar tudo / Guardar todo all correct."}, {"ts": "01:55", "entry": "#6: no completed-match data exists; Performance/empty-state renders cleanly but expandable charts could not be populated without polluting a live shared pool (global results). See tradeoff t2. Restored English locale."}]};
+    const SLUG = STATE.slug || "feature";
+
+    function exportAnswers() {
+      const answers = {};
+      document.querySelectorAll('[data-question-id]').forEach(card => {
+        const id = card.dataset.questionId;
+        let decision = null;
+        const multi = card.querySelectorAll('[data-role="decision-multi"]:checked');
+        const radio = card.querySelector('[data-role="decision"]:checked');
+        const select = card.querySelector('[data-role="decision-select"]');
+        const number = card.querySelector('[data-role="decision-number"]');
+        const range = card.querySelector('[data-role="decision-range"]');
+        const text = card.querySelector('[data-role="decision-text"]');
+        if (multi.length) decision = Array.from(multi).map(c => c.value);
+        else if (radio) decision = radio.value;
+        else if (select && select.value) decision = select.value;
+        else if (number && number.value !== "") decision = number.value;
+        else if (range) decision = range.value;
+        else if (text && text.value.trim()) decision = text.value.trim();
+        const noteEl = card.querySelector('[data-role="note"]');
+        const note = noteEl ? noteEl.value.trim() : "";
+        const hasDecision = Array.isArray(decision) ? decision.length > 0 : decision !== null && decision !== "";
+        if (hasDecision || note) answers[id] = { decision, note };
+      });
+
+      const comments = {};
+      document.querySelectorAll('[data-comment-for]').forEach(el => {
+        if (el.value.trim()) comments[el.dataset.commentFor] = el.value.trim();
+      });
+
+      const generalEl = document.querySelector('[data-role="general-note"]');
+      const general_note = generalEl ? generalEl.value.trim() : "";
+
+      const payload = { slug: SLUG, exported_at: new Date().toISOString(), answers, comments, general_note };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      const filename = SLUG + "-answers.json";
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      document.getElementById("export_filename").textContent = filename;
+      document.getElementById("export_done").showModal();
+    }
+  </script>
+</body>
+</html>

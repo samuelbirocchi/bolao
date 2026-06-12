@@ -47,6 +47,10 @@ function normalizeResolution(
   return "regular";
 }
 
+function normalizeResultGoals(goals: number | null | undefined, score: number | null | undefined) {
+  return goals ?? score ?? null;
+}
+
 export async function fetchWc2026Matches(): Promise<ExternalMatch[]> {
   const apiKey = process.env.WC2026_API_KEY;
   const baseUrl = process.env.WC2026_API_BASE_URL ?? "https://api.wc2026api.com";
@@ -83,8 +87,8 @@ export async function fetchWc2026Matches(): Promise<ExternalMatch[]> {
       kickoffUtc: match.kickoff_utc ?? new Date(0).toISOString(),
       status: normalizeStatus(match.status),
       phase: match.phase ?? null,
-      resultHomeGoals: match.home_score ?? match.home_goals ?? null,
-      resultAwayGoals: match.away_score ?? match.away_goals ?? null,
+      resultHomeGoals: normalizeResultGoals(match.home_goals, match.home_score),
+      resultAwayGoals: normalizeResultGoals(match.away_goals, match.away_score),
       resultHomePenalties: match.home_pen ?? null,
       resultAwayPenalties: match.away_pen ?? null,
       resultResolution: normalizeResolution(match.phase, match.home_pen, match.away_pen),
