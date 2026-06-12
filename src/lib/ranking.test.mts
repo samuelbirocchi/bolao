@@ -219,3 +219,77 @@ test("empty case: no completed matches ranks members by joined_at with zeros", (
   assert.equal(alicePerf.biggestClimb, 0);
   assert.equal(alicePerf.bestRank, 1);
 });
+
+test("competition ranking: tied scores share the same rank", () => {
+  const scores = [
+    score("alice", "m1", 10, 0, false, true),
+    score("bob", "m1", 10, 0, false, true),
+  ];
+  const { currentStandings } = buildRanking([m1], scores, [alice, bob, carol]);
+
+  assert.equal(currentStandings[0]!.userId, "alice");
+  assert.equal(currentStandings[0]!.rank, 1);
+  assert.equal(currentStandings[1]!.userId, "bob");
+  assert.equal(currentStandings[1]!.rank, 1);
+  assert.equal(currentStandings[2]!.userId, "carol");
+  assert.equal(currentStandings[2]!.rank, 3);
+});
+
+test("competition ranking: two-way tie skips next rank (10, 10, 8 → 1, 1, 3)", () => {
+  const scores = [
+    score("alice", "m1", 10, 0, false, true),
+    score("bob", "m1", 10, 0, false, true),
+    score("carol", "m1", 8, 0, false, true),
+  ];
+  const { currentStandings } = buildRanking([m1], scores, [alice, bob, carol]);
+
+  assert.equal(currentStandings[0]!.rank, 1);
+  assert.equal(currentStandings[1]!.rank, 1);
+  assert.equal(currentStandings[2]!.rank, 3);
+});
+
+test("competition ranking: three-way tie gives all rank 1", () => {
+  const scores = [
+    score("alice", "m1", 5, 0, false, true),
+    score("bob", "m1", 5, 0, false, true),
+    score("carol", "m1", 5, 0, false, true),
+  ];
+  const { currentStandings } = buildRanking([m1], scores, [alice, bob, carol]);
+
+  assert.equal(currentStandings[0]!.rank, 1);
+  assert.equal(currentStandings[1]!.rank, 1);
+  assert.equal(currentStandings[2]!.rank, 1);
+});
+
+test("competition ranking: rank delta is zero when tied after a match", () => {
+  const scores = [
+    // After m1: alice 10 (rank 1), bob 5 (rank 2).
+    score("alice", "m1", 10, 0, false, true),
+    score("bob", "m1", 5, 0, false, true),
+    // m2: bob catches up. alice no prediction.
+    score("bob", "m2", 5, 0, false, true),
+  ];
+  const { perMatch } = buildRanking([m1, m2], scores, [alice, bob]);
+
+  const bobAtM2 = perMatch[1]!.entries.find((e) => e.userId === "bob")!;
+  assert.equal(bobAtM2.rank, 1);
+  assert.equal(bobAtM2.rankDelta, 1); // 2 -> 1
+
+  const aliceAtM2 = perMatch[1]!.entries.find((e) => e.userId === "alice")!;
+  assert.equal(aliceAtM2.rank, 1);
+  assert.equal(aliceAtM2.rankDelta, 0); // 1 -> 1 (tied, no change)
+});
+
+test("competition ranking: tiebreaker preserves order within same rank", () => {
+  const scores = [
+    score("alice", "m1", 10, 0, true, true),  // alice: 10pts, 1 exact
+    score("bob", "m1", 10, 0, false, true),  // bob: 10pts, 0 exact
+  ];
+  const { currentStandings } = buildRanking([m1], scores, [alice, bob]);
+
+  // Alice has more exact scores, so she sorts first, but both get rank 1.
+  assert.equal(currentStandings[0]!.userId, "alice");
+  assert.equal(currentStandings[0]!.rank, 1);
+  assert.equal(currentStandings[1]!.userId, "bob");
+  assert.equal(currentStandings[1]!.rank, 1);
+});
