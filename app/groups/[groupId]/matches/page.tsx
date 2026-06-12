@@ -7,9 +7,11 @@ import { requireUser } from "@/lib/auth";
 import { getGroupDetail, getMatchesWithPredictions } from "@/lib/data";
 import { displayName } from "@/lib/format";
 import { getDictionary, getLocale } from "@/lib/i18n/server";
+import { hasSaveFeedback } from "@/lib/saveFeedback";
 
 type MatchesPageProps = {
   params: Promise<{ groupId: string }>;
+  searchParams: Promise<{ saved?: string }>;
 };
 
 function formatProbability(value: number | null) {
@@ -46,14 +48,15 @@ function formatResolution(
   return null;
 }
 
-export default async function MatchesPage({ params }: MatchesPageProps) {
+export default async function MatchesPage({ params, searchParams }: MatchesPageProps) {
   const { user } = await requireUser();
   const { groupId } = await params;
-  const [group, matches, locale, t] = await Promise.all([
+  const [group, matches, locale, t, queryParams] = await Promise.all([
     getGroupDetail(groupId, user.id),
     getMatchesWithPredictions(groupId, user.id),
     getLocale(),
     getDictionary(),
+    searchParams,
   ]);
 
   if (!group) {
@@ -78,6 +81,12 @@ export default async function MatchesPage({ params }: MatchesPageProps) {
         <Link href={`/groups/${group.id}/leaderboard`}>{t.group.leaderboard}</Link>
         <Link href={`/groups/${group.id}/ranking`}>{t.group.ranking}</Link>
       </div>
+
+      {hasSaveFeedback(queryParams.saved, "predictions") ? (
+        <div className="notice" role="status">
+          {t.matches.savedNotice}
+        </div>
+      ) : null}
 
       {matches.length === 0 ? (
         <div className="empty">{t.matches.empty}</div>

@@ -127,6 +127,7 @@ export const dictionaries = {
       winnerStats: "Winner",
       commonScores: "Most common scores",
       noStats: "No locked predictions yet.",
+      savedNotice: "Predictions saved.",
     },
     leaderboard: {
       title: "Leaderboard",
@@ -263,6 +264,7 @@ export const dictionaries = {
       avatarFileHint: "PNG, JPG, or WebP up to 2 MB. Uploads override the URL.",
       save: "Save changes",
       removeAvatar: "Remove avatar",
+      savedNotice: "Profile changes saved.",
     },
   },
   "pt-BR": {
@@ -367,6 +369,7 @@ export const dictionaries = {
       winnerStats: "Vencedor",
       commonScores: "Resultados mais comuns",
       noStats: "Nenhum palpite travado ainda.",
+      savedNotice: "Palpites salvos.",
     },
     leaderboard: {
       title: "Classificação",
@@ -503,6 +506,7 @@ export const dictionaries = {
       avatarFileHint: "PNG, JPG ou WebP com até 2 MB. O upload sobrepõe a URL.",
       save: "Salvar alterações",
       removeAvatar: "Remover avatar",
+      savedNotice: "Alterações do perfil salvas.",
     },
   },
   es: {
@@ -609,6 +613,7 @@ export const dictionaries = {
       winnerStats: "Ganador",
       commonScores: "Resultados más comunes",
       noStats: "Aún no hay predicciones bloqueadas.",
+      savedNotice: "Predicciones guardadas.",
     },
     leaderboard: {
       title: "Clasificación",
@@ -745,6 +750,7 @@ export const dictionaries = {
       avatarFileHint: "PNG, JPG o WebP de hasta 2 MB. La subida reemplaza la URL.",
       save: "Guardar cambios",
       removeAvatar: "Eliminar avatar",
+      savedNotice: "Cambios del perfil guardados.",
     },
   },
 } as const;
