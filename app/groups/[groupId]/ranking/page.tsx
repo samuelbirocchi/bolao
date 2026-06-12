@@ -244,8 +244,16 @@ export default async function RankingPage({ params }: RankingPageProps) {
                       <tr key={entry.userId} className={entry.userId === user.id ? "current" : undefined}>
                         <td>{entry.rank}</td>
                         <td>
-                          {nameFor(entry.userId)}
-                          {entry.exact ? <span className="badge-exact">{t.ranking.exactTag}</span> : null}
+                          <span className="ranking-player">
+                            <UserAvatar
+                              name={membersById.get(entry.userId)?.display_name ?? null}
+                              seed={entry.userId}
+                              size={30}
+                              url={membersById.get(entry.userId)?.avatar_url ?? null}
+                            />
+                            <span className="ranking-player-name">{nameFor(entry.userId)}</span>
+                            {entry.exact ? <span className="badge-exact">{t.ranking.exactTag}</span> : null}
+                          </span>
                         </td>
                         <td>{entry.matchPoints}</td>
                         <td>{entry.cumulativePoints}</td>
