@@ -23,6 +23,8 @@ Add these variables in Vercel for the **Production** environment:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `NEXT_PUBLIC_SITE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `CRON_SECRET`
 - `WC2026_API_KEY`
 - `WC2026_API_BASE_URL`
 - `ODDS_API_KEY`
@@ -37,6 +39,12 @@ Set `NEXT_PUBLIC_SITE_URL` to the production Vercel URL or custom domain, not to
 production emails do not accidentally inherit a local development origin. Because
 `NEXT_PUBLIC_*` values are embedded at build time, redeploy after changing either
 public variable.
+
+`SUPABASE_SERVICE_ROLE_KEY` is only used by the server-side cron route so it can
+write match fixtures and final results without an interactive admin session.
+Keep it secret and never expose it with a `NEXT_PUBLIC_` prefix. `CRON_SECRET`
+secures Vercel cron invocations; Vercel sends it as the `Authorization: Bearer`
+header when calling `/api/cron/sync-matches`.
 
 ## Local pre-deploy verification
 
@@ -80,6 +88,8 @@ After deployment, open the production URL and verify:
 - Group list and individual group pages load.
 - Admin pages load for the promoted global admin user.
 - WC2026 sync runs from `/admin/matches`.
+- Post-match WC2026 sync runs from `/api/cron/sync-matches` when called with
+  `Authorization: Bearer <CRON_SECRET>`.
 - Odds sync runs from `/admin/matches`.
 
 ## Supabase assumptions
