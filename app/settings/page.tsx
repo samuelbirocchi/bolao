@@ -2,11 +2,12 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { createPasswordAction, removeAvatarAction, updateProfileAction } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
 import { safeInternalRedirectPath } from "@/lib/authForms";
+import { hasSaveFeedback } from "@/lib/saveFeedback";
 import { createClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { getDictionary } from "@/lib/i18n/server";
 
 type SettingsPageProps = {
-  searchParams: Promise<{ message?: string; next?: string; setupPassword?: string }>;
+  searchParams: Promise<{ message?: string; next?: string; saved?: string; setupPassword?: string }>;
 };
 
 export default async function SettingsPage({ searchParams }: SettingsPageProps) {
@@ -40,6 +41,12 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
       </div>
 
       <div className="stack" style={{ maxWidth: "32rem" }}>
+        {hasSaveFeedback(queryParams.saved, "profile") ? (
+          <div className="notice" role="status">
+            {t.settings.savedNotice}
+          </div>
+        ) : null}
+
         {showPasswordSetup ? (
           <form className="card form-grid" action={createPasswordAction}>
             <h2>{t.settings.passwordTitle}</h2>
