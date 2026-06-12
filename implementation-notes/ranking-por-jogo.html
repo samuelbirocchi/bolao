@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="corporate">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ranking por Jogo (Issue #4) — Implementation Notes</title>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.24/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-base-200">
+  <main class="container mx-auto p-6 max-w-4xl">
+    <div class="prose max-w-none mb-6">
+      <h1 class="text-3xl font-bold mb-1">Ranking por Jogo (Issue&nbsp;#4)</h1>
+      <p class="text-base-content/70">Per-match ranking evolution — implementation notes. Updated incrementally as the feature is built.</p>
+    </div>
+
+    <div class="alert alert-info shadow mb-6">
+      <div>
+        <span class="font-bold">TL;DR</span> — New "Ranking" tab showing position evolution over the tournament. Backed by a new
+        <code>match_prediction_scores</code> SQL view (refactored out of <code>leaderboard_entries</code>, behaviour-preserving),
+        a pure unit-tested derivation module (<code>src/lib/ranking.ts</code>), and a hand-rolled inline-SVG chart. No scoring logic changed.
+      </div>
+    </div>
+
+    <div class="stats shadow w-full mb-6">
+      <div class="stat">
+        <div class="stat-title">Scope</div>
+        <div class="stat-value text-primary text-2xl">All 6 sub-features</div>
+        <div class="stat-desc">confirmed with user</div>
+      </div>
+      <div class="stat">
+        <div class="stat-title">Chart</div>
+        <div class="stat-value text-2xl">Inline SVG</div>
+        <div class="stat-desc">no charting dependency</div>
+      </div>
+    </div>
+
+    <details class="collapse collapse-arrow bg-base-100 shadow mb-4" open>
+      <summary class="collapse-title text-xl font-bold">1. Design decisions</summary>
+      <div class="collapse-content space-y-3">
+        <div>
+          <h3 class="font-bold">Rank = positional (1,2,3…), not competition ranking</h3>
+          <p class="text-sm text-base-content/80">The existing leaderboard renders <code>index + 1</code> after ordering by
+          total&nbsp;desc&nbsp;→&nbsp;exact&nbsp;desc&nbsp;→&nbsp;winner&nbsp;desc&nbsp;→&nbsp;joined_at&nbsp;asc. To "match the leaderboard"
+          exactly, <code>buildRanking</code> assigns rank by sorted position (ties broken fully by the same comparator, with
+          <code>user_id</code> as a final deterministic tiebreak). No shared ranks.</p>
+        </div>
+        <div>
+          <h3 class="font-bold">Per-day grouping uses the UTC calendar date</h3>
+          <p class="text-sm text-base-content/80"><code>kickoff_utc</code> is sliced to <code>YYYY-MM-DD</code> in UTC. This keeps the pure
+          module deterministic and trivially testable (no timezone dependency). Tradeoff noted below.</p>
+        </div>
+        <div>
+          <h3 class="font-bold">Carry-forward at 0</h3>
+          <p class="text-sm text-base-content/80">A member with no prediction (or no score row) for a completed match contributes 0 points
+          for that step but still appears in every standings snapshot, so lines are continuous.</p>
+        </div>
+        <div>
+          <h3 class="font-bold">rankDelta sign convention</h3>
+          <p class="text-sm text-base-content/80"><code>rankDelta = previousRank − currentRank</code>. Positive ⇒ moved up toward 1st ⇒ ▲.
+          First step has delta 0.</p>
+        </div>
+      </div>
+    </details>
+
+    <details class="collapse collapse-arrow bg-base-100 shadow mb-4" open>
+      <summary class="collapse-title text-xl font-bold">2. Deviations from the spec</summary>
+      <div class="collapse-content space-y-3">
+        <div>
+          <h3 class="font-bold">Column names: <code>home_team_name</code> / <code>away_team_name</code></h3>
+          <p class="text-sm text-base-content/80">The plan's data-layer sketch said fetch <code>home_team, away_team</code>. The actual
+          <code>matches</code> table (migration 001) has <code>home_team_name</code> / <code>away_team_name</code>. Using the real columns.</p>
+        </div>
+        <div>
+          <h3 class="font-bold">Members source = <code>getLeaderboard</code> reuse</h3>
+          <p class="text-sm text-base-content/80">Instead of a separate members query, <code>getMatchRankingData</code> reuses
+          <code>getLeaderboard(groupId)</code> (which already returns every group member with <code>user_id, display_name, avatar_url,
+          joined_at</code> via the <code>group_memberships JOIN profiles</code> shape). Avoids a duplicate query; the pure module only needs
+          that subset.</p>
+        </div>
+        <div>
+          <h3 class="font-bold">Completed-matches set = matches with a <code>match_results</code> row</h3>
+          <p class="text-sm text-base-content/80">A match with a result but zero predictions won't appear in <code>match_prediction_scores</code>.
+          To still walk it (everyone at 0), the data layer derives the completed set from <code>match_results</code> and filters the
+          <code>matches</code> metadata, rather than from the scores view alone.</p>
+        </div>
+      </div>
+    </details>
+
+    <details class="collapse collapse-arrow bg-base-100 shadow mb-4">
+      <summary class="collapse-title text-xl font-bold">3. Tradeoffs considered</summary>
+      <div class="collapse-content space-y-3">
+        <div>
+          <h3 class="font-bold">UTC vs local day grouping</h3>
+          <p class="text-sm text-base-content/80">Local (e.g. America/Sao_Paulo) day grouping matches user intuition better but makes the
+          pure module timezone-dependent and harder to test deterministically. Chose UTC for the model; the page formats day labels for the
+          locale at render time. <span class="badge badge-warning badge-sm">open question</span></p>
+        </div>
+        <div>
+          <h3 class="font-bold">Chart: inline SVG vs Chart.js</h3>
+          <p class="text-sm text-base-content/80">Plan mandates hand-rolled SVG to stay server-component-first (no client JS) and match the
+          custom-CSS design system. Accepted: more layout code, but zero new deps and SSR-friendly.</p>
+        </div>
+      </div>
+    </details>
+
+    <details class="collapse collapse-arrow bg-base-100 shadow mb-4">
+      <summary class="collapse-title text-xl font-bold">4. Open questions</summary>
+      <div class="collapse-content space-y-3">
+        <ul class="list-disc list-inside text-sm text-base-content/80 space-y-1">
+          <li>Per-day grouping in UTC — acceptable, or should it follow a fixed tournament timezone?</li>
+          <li>"Worst match points" — computed over matches the player actually predicted (excludes carry-forward 0s). Confirm this is the intended meaning.</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="collapse collapse-arrow bg-base-100 shadow mb-4">
+      <summary class="collapse-title text-xl font-bold">5. Progress log</summary>
+      <div class="collapse-content">
+        <ul class="steps steps-vertical">
+          <li class="step step-primary">Context gathered (migrations, data, i18n, css, RLS confirmed)</li>
+          <li class="step step-primary">Migration 004</li>
+          <li class="step step-primary">Data layer</li>
+          <li class="step step-primary">Pure module + 8 tests (all pass)</li>
+          <li class="step step-primary">RankingChart</li>
+          <li class="step step-primary">Page + tabs + i18n + css</li>
+          <li class="step step-primary">Verify (see below)</li>
+        </ul>
+        <div class="alert alert-success mt-4">
+          <div>
+            <span class="font-bold">Verification evidence</span>
+            <ul class="list-disc list-inside text-sm mt-1">
+              <li><code>npm run verify</code> green: test (33 pass) → typecheck → lint (0 warnings) → build (ranking route compiled).</li>
+              <li>Local Supabase: migration 004 applied cleanly; <strong>0 differing rows</strong> between old (003) and new (004) <code>leaderboard_entries</code> over a seeded scenario — behaviour-preserving confirmed.</li>
+              <li><code>match_prediction_scores</code> returns correct per-match rows (draw correctly gives exact bonus but no winner credit).</li>
+              <li>Browser (cmux, real session vs local DB): 4 tabs, 2 SVG charts, per-member lines with current user emphasised, 4 per-match tables with ▲/▼ deltas + EXACT badges, per-day standings, 3 performance cards, current position. No console errors. Scoring spot-checked correct (Tester 48 pts).</li>
+              <li>RLS: <code>predictions_select_member</code> uses <code>is_group_member</code>, so the security-invoker per-match view is visible to co-members (same path the leaderboard already relies on).</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </details>
+  </main>
+</body>
+</html>

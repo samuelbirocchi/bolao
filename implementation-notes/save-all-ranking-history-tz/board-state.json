@@ -1,0 +1,60 @@
+{
+  "feature": "GitHub issues #5 & #6 + client-timezone kickoff display",
+  "slug": "save-all-ranking-history-tz",
+  "status": "done",
+  "updated": "2026-06-10T02:00",
+  "summary": "Three changes to the World Cup pool app: (#5) replace per-match Save buttons with one 'Save all predictions' form; (#6) make every ranking participant card expandable to show that participant's position-history chart; and display kickoff times in the client's timezone.",
+  "sections": {
+    "decisions": [
+      {
+        "id": "d1",
+        "title": "Single Save-all button, sticky at the bottom",
+        "detail": "One submit button (no top duplicate). Made it position:sticky at the bottom of the form so it stays reachable on a long match list without scrolling to the very end. Disabled when there are zero unlocked matches.",
+        "rationale": "Plan offered an optional sticky duplicate at the top; a single sticky-bottom button is simpler and better UX for a long list. Locked matches' inputs are disabled (not submitted); the button is the only control."
+      },
+      {
+        "id": "d2",
+        "title": "Extract parse/filter into pure buildPredictionEntries()",
+        "detail": "New src/lib/predictions.ts holds buildPredictionEntries(rawPairs) returning validated {matchId, homeGoals, awayGoals}[]; the action reads FormData into raw pairs then calls it. Covered by src/lib/predictions.test.mts.",
+        "rationale": "Satisfies the 'behavioral change needs tests' rule with a pure, testable unit; keeps the action thin."
+      },
+      {
+        "id": "d3",
+        "title": "LocalKickoff client component with SSR-stable fallback",
+        "detail": "New 'use client' component renders <time> with the server (UTC) format as initial state, then reformats in useEffect using the browser timezone. suppressHydrationWarning avoids a mismatch warning.",
+        "rationale": "Only way Intl can pick up the client's timezone; keeps SSR deterministic. Stored data stays UTC; only display changes. Lock/scoring compare absolute instants, unaffected."
+      }
+    ],
+    "deviations": [
+      {
+        "id": "dv1",
+        "title": "Locked matches show a 'Locked' label instead of a disabled button",
+        "detail": "Per-match Save buttons are gone (issue #5). For locked matches the score inputs are disabled and a small 'Locked' text marker is shown in their place, so the locked state stays visible.",
+        "rationale": "Preserves the prior visual signal that a match is locked now that the per-row button (which previously read 'Locked') no longer exists."
+      }
+    ],
+    "tradeoffs": [
+      {
+        "id": "t1",
+        "title": "Full RankingChart (all lines) per participant card",
+        "detail": "Each expandable card renders the complete by-match chart emphasizing that participant, rather than a single-line chart. Charts sit inside collapsed <details> so DOM cost is low."
+      },
+      {
+        "id": "t2",
+        "title": "#6 expanded-chart not exercised with live data",
+        "detail": "No group in the connected Supabase has any completed match (all WC2026 fixtures are future-dated), so the Performance section is empty everywhere and the new <details> charts have no data to render. Match results are GLOBAL (shared by all groups, read by production), so seeding a fake result to populate the chart would inject it into a real 19-member pool — not safe. Verified instead: build/typecheck/lint pass, the empty-state path renders cleanly without crashing, and the chart itself is the unchanged, already-tested RankingChart component (only new inputs are currentUserId=participant and a <details> wrapper)."
+      }
+    ]
+  },
+  "questions": [],
+  "files": [],
+  "log": [
+    {"ts": "00:00", "entry": "Read current matches/ranking/admin pages, actions, i18n, RankingChart, CSS. Created board."},
+    {"ts": "00:30", "entry": "#5: added src/lib/predictions.ts + test, saveAllPredictionsAction, rewrote matches/page.tsx to one form, saveAll i18n, .match-form CSS."},
+    {"ts": "00:45", "entry": "#6: perf-card -> <details> + RankingChart per participant, positionHistory i18n, .perf-detail CSS."},
+    {"ts": "00:50", "entry": "TZ: added LocalKickoff client component, wired into matches + admin/matches pages."},
+    {"ts": "01:00", "entry": "npm run verify passed; 38 tests pass (incl. 5 new prediction tests)."},
+    {"ts": "01:40", "entry": "Visual check on localhost:3100 (real Supabase, logged in). #5: single 'Save all' button, no per-match buttons; saved Mexico 2-1 SA, left match 2 blank -> reload confirmed only filled match persisted (blank skipped). TZ: kickoff times render via LocalKickoff (local zone), no hydration/console errors on matches + admin/matches. Locales: Save all / Salvar tudo / Guardar todo all correct."},
+    {"ts": "01:55", "entry": "#6: no completed-match data exists; Performance/empty-state renders cleanly but expandable charts could not be populated without polluting a live shared pool (global results). See tradeoff t2. Restored English locale."}
+  ]
+}
