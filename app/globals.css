@@ -634,6 +634,36 @@ label {
   color: var(--text);
 }
 
+.tabs button {
+  background: rgba(255, 255, 255, 0.64);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+  box-shadow: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 900;
+  min-height: auto;
+  padding: 0.62rem 0.9rem;
+  white-space: nowrap;
+}
+
+.tabs button:hover {
+  background: var(--panel-solid);
+  color: var(--text);
+  transform: none;
+}
+
+.tabs button.active {
+  background: var(--brand);
+  border-color: transparent;
+  box-shadow: 0 10px 24px var(--brand-glow);
+  color: #fff;
+}
+
+.tabs button.active:hover {
+  background: var(--brand-strong);
+}
+
 .match-list,
 .leaderboard {
   display: grid;
@@ -946,6 +976,15 @@ label {
   gap: 0.8rem;
   grid-template-columns: auto auto 1fr auto;
   padding: 0.9rem;
+}
+
+.leader-name-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.leader-name-link:hover {
+  text-decoration: underline;
 }
 
 .avatar {
@@ -1525,6 +1564,10 @@ label {
   .ranking-table th,
   .ranking-table td {
     padding: 0.42rem 0.3rem;
+  }
+
+  .player-points .ranking-table td:nth-child(2) {
+    font-size: 0.82rem;
   }
 }
 
