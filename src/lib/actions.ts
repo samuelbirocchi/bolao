@@ -15,7 +15,7 @@ import { redeemInviteCode } from "@/lib/invites";
 import { buildOddsSnapshots, fetchWorldCupOdds } from "@/lib/odds";
 import { buildPredictionEntries } from "@/lib/predictions";
 import { pathWithSaveFeedback } from "@/lib/saveFeedback";
-import { fetchWc2026Matches } from "@/lib/schedule/wc2026";
+import { syncWc2026MatchesForAdmin } from "@/lib/schedule/sync";
 import { createClient, hasSupabaseEnv } from "@/lib/supabase/server";
 
 const AVATAR_BUCKET = "avatars";
@@ -502,64 +502,8 @@ export async function updateMatchResultAction(formData: FormData) {
 }
 
 export async function syncMatchesAction() {
-  requireSupabaseConfig();
   const { user } = await requireGlobalAdmin();
-  const externalMatches = await fetchWc2026Matches();
-  const supabase = await createClient();
-
-  const { data: matches, error: matchError } = await supabase
-    .from("matches")
-    .upsert(
-      externalMatches.map((match) => ({
-        match_number: match.matchNumber,
-        round: match.round,
-        group_name: match.groupName,
-        home_team_name: match.homeTeamName ?? match.homeTeamPlaceholder ?? "TBD",
-        away_team_name: match.awayTeamName ?? match.awayTeamPlaceholder ?? "TBD",
-        home_team_placeholder: match.homeTeamPlaceholder,
-        away_team_placeholder: match.awayTeamPlaceholder,
-        stadium: match.stadium,
-        kickoff_utc: match.kickoffUtc,
-        status: match.status,
-        phase: match.phase,
-      })),
-      { onConflict: "match_number" },
-    )
-    .select("id, match_number");
-
-  if (matchError || !matches) {
-    throw new Error(matchError?.message ?? "Could not sync matches.");
-  }
-
-  const matchIdByNumber = new Map(matches.map((match) => [match.match_number, match.id]));
-  const completedResults = externalMatches
-    .filter((match) => match.resultHomeGoals !== null && match.resultAwayGoals !== null)
-    .map((match) => ({
-      match_id: matchIdByNumber.get(match.matchNumber),
-      home_goals: match.resultHomeGoals!,
-      away_goals: match.resultAwayGoals!,
-      home_penalties:
-        match.resultResolution === "penalties" ? match.resultHomePenalties : null,
-      away_penalties:
-        match.resultResolution === "penalties" ? match.resultAwayPenalties : null,
-      resolution: match.resultResolution,
-      updated_by: user.id,
-      updated_at: new Date().toISOString(),
-    }))
-    .filter((result) => result.match_id);
-
-  if (completedResults.length > 0) {
-    const { error: resultError } = await supabase
-      .from("match_results")
-      .upsert(completedResults, { onConflict: "match_id" });
-
-    if (resultError) {
-      throw new Error(resultError.message);
-    }
-  }
-
-  revalidatePath("/admin/matches");
-  revalidatePath("/groups", "layout");
+  await syncWc2026MatchesForAdmin(user.id);
 }
 
 export async function syncOddsAction() {

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="corporate">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Order games bet view by date — Implementation Notes</title>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.24/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-base-200">
+  <main class="container mx-auto p-6 max-w-4xl">
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold">Order games bet view by date</h1>
+      <p class="text-base-content/70 mt-1">Implementation notes · bolão World Cup pool</p>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl mb-6">
+      <div class="card-body">
+        <h2 class="card-title">TL;DR</h2>
+        <p>The games bet view (<code>/groups/[groupId]/matches</code>) listed matches by
+        <code>match_number</code>. Changed the single Supabase query in
+        <code>getMatchesWithPredictions</code> to order by <code>kickoff_utc</code> ascending,
+        with <code>match_number</code> as a tie-breaker. One-line query change, no UI/markup change.</p>
+        <div class="flex gap-2 flex-wrap mt-2">
+          <span class="badge badge-success">Code change done</span>
+          <span class="badge badge-success">npm run verify clean</span>
+          <span class="badge badge-warning">Visual check blocked by auth</span>
+        </div>
+      </div>
+    </div>
+
+    <details class="collapse collapse-arrow bg-base-100 shadow mb-4" open>
+      <summary class="collapse-title text-xl font-bold">1. Design decisions</summary>
+      <div class="collapse-content space-y-2">
+        <ul class="list-disc pl-6 space-y-1">
+          <li><b>Order at the query, not in JS.</b> The view maps the array straight from
+          <code>getMatchesWithPredictions</code> (no client sort, no round grouping), so the DB
+          <code>ORDER BY</code> is the single source of ordering — same place the old
+          <code>match_number</code> order lived.</li>
+          <li><b>Secondary <code>match_number</code> sort.</b> Group-stage games frequently share a
+          kickoff slot; without a tie-breaker their relative order would be non-deterministic.
+          Ascending <code>match_number</code> keeps it stable and intuitive.</li>
+          <li><b><code>kickoff_utc</code> is the date field.</b> It's the only date on the match row
+          (ISO 8601 <code>timestamptz</code>). Ascending = earliest games first.</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="collapse collapse-arrow bg-base-100 shadow mb-4">
+      <summary class="collapse-title text-xl font-bold">2. Deviations from spec</summary>
+      <div class="collapse-content">
+        <p>None. Implemented exactly as planned.</p>
+      </div>
+    </details>
+
+    <details class="collapse collapse-arrow bg-base-100 shadow mb-4">
+      <summary class="collapse-title text-xl font-bold">3. Tradeoffs</summary>
+      <div class="collapse-content space-y-2">
+        <ul class="list-disc pl-6 space-y-1">
+          <li><b>Scope kept to the bet view only.</b> <code>getAdminMatches</code> (results-management
+          view) still orders by <code>match_number</code> — the user named the "games bet view"
+          specifically. Open question below.</li>
+          <li><b>No new test.</b> The change is a query <code>ORDER BY</code> with no branching logic,
+          and the repo has no Supabase query-builder test harness (data-layer tests need a live DB).
+          Adding one would mean introducing a harness that doesn't exist — out of proportion to a
+          one-line order change. Verified instead via running app + visual check.</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="collapse collapse-arrow bg-base-100 shadow mb-4">
+      <summary class="collapse-title text-xl font-bold">4. Open questions</summary>
+      <div class="collapse-content">
+        <div class="alert alert-info">
+          Should the admin matches view (<code>/admin/matches</code>) also be ordered by date?
+          Currently left on <code>match_number</code> per the plan's scope.
+        </div>
+      </div>
+    </details>
+
+    <details class="collapse collapse-arrow bg-base-100 shadow mb-4" open>
+      <summary class="collapse-title text-xl font-bold">5. Verification</summary>
+      <div class="collapse-content space-y-2">
+        <ul class="list-disc pl-6 space-y-1">
+          <li><b><code>npm run verify</code> — passed clean.</b> test → typecheck → lint
+          (<code>--max-warnings=0</code>) → production build all green. Typecheck confirms the chained
+          <code>.order("kickoff_utc")</code> is valid supabase-js and the column is part of the select.</li>
+          <li><b>In-browser visual check — not completed.</b> The matches page is behind magic-link
+          auth and the <code>matches</code> table is RLS-protected (<code>matches_select_authenticated</code>),
+          so an anon REST read returns <code>[]</code> and the page redirects to <code>/login</code>.
+          Reaching the seeded betting list needs an authenticated session; retrieving the magic link
+          would require scanning the inbox, which the safety policy declined as out of scope.</li>
+          <li><b>To finish the visual confirmation:</b> log in to the running dev server, open
+          <code>/groups/&lt;id&gt;/matches</code>, and confirm the per-card kickoff date (top-right)
+          increases down the list.</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="collapse collapse-arrow bg-base-100 shadow mb-4">
+      <summary class="collapse-title text-xl font-bold">6. The change</summary>
+      <div class="collapse-content">
+        <p class="mb-2"><code>src/lib/data.ts</code> → <code>getMatchesWithPredictions</code>:</p>
+        <pre class="bg-base-300 p-4 rounded-lg overflow-x-auto text-sm"><code>- .order("match_number", { ascending: true }),
++ .order("kickoff_utc", { ascending: true })
++ .order("match_number", { ascending: true }),</code></pre>
+      </div>
+    </details>
+  </main>
+</body>
+</html>

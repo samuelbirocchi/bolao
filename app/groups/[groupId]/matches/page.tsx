@@ -4,10 +4,12 @@ import { TeamName } from "@/components/TeamName";
 import { notFound } from "next/navigation";
 import { saveAllPredictionsAction } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
-import { getGroupDetail, getMatchesWithPredictions } from "@/lib/data";
+import { getGroupDetail, getMatchesWithPredictions, getScoringSettings } from "@/lib/data";
 import { displayName } from "@/lib/format";
 import { getDictionary, getLocale } from "@/lib/i18n/server";
 import { hasSaveFeedback } from "@/lib/saveFeedback";
+import { splitMatchesByKickoff } from "@/lib/matches";
+import { calculateBasePoints, type ScoreWeights } from "@/lib/scoring";
 
 type MatchesPageProps = {
   params: Promise<{ groupId: string }>;
@@ -33,6 +35,14 @@ function statsBarWidth(count: number, total: number) {
   return total === 0 ? "0%" : `${Math.max(2, Math.round((count / total) * 100))}%`;
 }
 
+function formatVictoryPoints(
+  probability: number | null,
+  weights: ScoreWeights,
+  label: string,
+) {
+  return label.replace("{points}", String(calculateBasePoints(probability, weights)));
+}
+
 function formatResolution(
   resolution: string | null,
   labels: { afterExtraTime: string; onPenalties: string },
@@ -51,9 +61,10 @@ function formatResolution(
 export default async function MatchesPage({ params, searchParams }: MatchesPageProps) {
   const { user } = await requireUser();
   const { groupId } = await params;
-  const [group, matches, locale, t, queryParams] = await Promise.all([
+  const [group, matches, scoring, locale, t, queryParams] = await Promise.all([
     getGroupDetail(groupId, user.id),
     getMatchesWithPredictions(groupId, user.id),
+    getScoringSettings(),
     getLocale(),
     getDictionary(),
     searchParams,
@@ -67,6 +78,206 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
   const unlockedMatchIds = matches
     .filter((match) => new Date(match.kickoff_utc).getTime() > now)
     .map((match) => match.id);
+  const { pastMatches, upcomingMatches } = splitMatchesByKickoff(matches, now);
+
+  const renderMatchCard = (match: (typeof matches)[number]) => {
+    const locked = new Date(match.kickoff_utc).getTime() <= now;
+    const homeName = displayName(
+      match.home_team_name,
+      match.home_team_placeholder ?? t.matches.fallbackTeam,
+    );
+    const awayName = displayName(
+      match.away_team_name,
+      match.away_team_placeholder ?? t.matches.fallbackTeam,
+    );
+    const predictionStats =
+      locked && match.prediction_stats && match.prediction_stats.total > 0
+        ? match.prediction_stats
+        : null;
+    const outcomeRows = predictionStats
+      ? [
+          {
+            className: "home",
+            count: predictionStats.outcomes.home,
+            label: homeName,
+          },
+          {
+            className: "draw",
+            count: predictionStats.outcomes.draw,
+            label: t.matches.draw,
+          },
+          {
+            className: "away",
+            count: predictionStats.outcomes.away,
+            label: awayName,
+          },
+        ]
+      : [];
+    const commonScorelines = predictionStats?.scorelines.slice(0, 5) ?? [];
+
+    return (
+      <article
+        className={locked ? "match-card match-card-clickable" : "match-card"}
+        key={match.id}
+      >
+        {locked ? (
+          <Link
+            aria-label={`${t.matches.viewLivePicks}: ${homeName} ${t.matches.versus} ${awayName}`}
+            className="match-card-overlay"
+            href={`/groups/${group.id}/matches/${match.id}`}
+          >
+            <span className="sr-only">{t.matches.viewLivePicks}</span>
+          </Link>
+        ) : null}
+        <div className="row">
+          <span className="muted">
+            {t.matches.match} {match.match_number} · {match.group_name ?? match.round}
+          </span>
+          <span className="muted">
+            <LocalKickoff iso={match.kickoff_utc} locale={locale} />
+          </span>
+        </div>
+
+        <div className="match-title">
+          <TeamName canonicalName={match.home_team_name} className="team" name={homeName} />
+          <span className="muted">{t.matches.versus}</span>
+          <TeamName canonicalName={match.away_team_name} className="team" name={awayName} />
+        </div>
+
+        {match.result_home_goals !== null && match.result_away_goals !== null ? (
+          <div className="notice">
+            {t.matches.result}: {match.result_home_goals} x {match.result_away_goals}
+            {match.result_resolution === "penalties" &&
+            match.result_home_penalties !== null &&
+            match.result_away_penalties !== null
+              ? ` (${match.result_home_penalties} x ${match.result_away_penalties} ${t.matches.penaltiesShort})`
+              : ""}
+            {formatResolution(match.result_resolution, t.matches)
+              ? ` ${formatResolution(match.result_resolution, t.matches)}`
+              : ""}
+          </div>
+        ) : null}
+
+        {match.odds_captured_at !== null ? (
+          <div className="notice">
+            {t.matches.odds}: {t.matches.home} {formatProbability(match.odds_home_win_probability)}{" "}
+            · {t.matches.draw} {formatProbability(match.odds_draw_probability)} ·{" "}
+            {t.matches.away} {formatProbability(match.odds_away_win_probability)}
+          </div>
+        ) : null}
+
+        <div className="score-inputs">
+          <label>
+            <TeamName canonicalName={match.home_team_name} name={homeName} />
+            <span className="prediction-points">
+              {formatVictoryPoints(
+                match.odds_home_win_probability,
+                scoring,
+                t.matches.victoryPoints,
+              )}
+            </span>
+            <input
+              aria-label={`${homeName} ${t.matches.goals}`}
+              defaultValue={match.prediction_home_goals ?? ""}
+              disabled={locked}
+              min={0}
+              name={`home-${match.id}`}
+              type="number"
+            />
+          </label>
+          <label>
+            <TeamName canonicalName={match.away_team_name} name={awayName} />
+            <span className="prediction-points">
+              {formatVictoryPoints(
+                match.odds_away_win_probability,
+                scoring,
+                t.matches.victoryPoints,
+              )}
+            </span>
+            <input
+              aria-label={`${awayName} ${t.matches.goals}`}
+              defaultValue={match.prediction_away_goals ?? ""}
+              disabled={locked}
+              min={0}
+              name={`away-${match.id}`}
+              type="number"
+            />
+          </label>
+          {locked ? <span className="muted">{t.matches.locked}</span> : null}
+        </div>
+
+        {predictionStats ? (
+          <section className="prediction-stats" aria-label={t.matches.statistics}>
+            <div className="prediction-stats-head">
+              <div>
+                <strong>{t.matches.statistics}</strong>
+                <p className="muted">
+                  {t.matches.statsDescription.replace(
+                    "{count}",
+                    String(predictionStats.total),
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="prediction-stats-grid">
+              <div>
+                <h3>{t.matches.winnerStats}</h3>
+                <div className="stat-bars">
+                  {outcomeRows.map((row) => (
+                    <div className="stat-bar-row" key={row.label}>
+                      <span>{row.label}</span>
+                      <div className="stat-bar-track" aria-hidden="true">
+                        <span
+                          className={`stat-bar-fill ${row.className}`}
+                          style={{ width: statsBarWidth(row.count, predictionStats.total) }}
+                        />
+                      </div>
+                      <strong>{formatStatsShare(row.count, predictionStats.total, locale)}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3>{t.matches.commonScores}</h3>
+                {commonScorelines.length > 0 ? (
+                  <ol className="scoreline-list">
+                    {commonScorelines.map((scoreline) => (
+                      <li
+                        className="stat-bar-row"
+                        key={`${scoreline.homeGoals}-${scoreline.awayGoals}`}
+                      >
+                        <span>
+                          {scoreline.homeGoals} x {scoreline.awayGoals}
+                        </span>
+                        <div className="stat-bar-track" aria-hidden="true">
+                          <span
+                            className="stat-bar-fill scoreline"
+                            style={{
+                              width: statsBarWidth(scoreline.count, predictionStats.total),
+                            }}
+                          />
+                        </div>
+                        <strong>
+                          {formatStatsShare(scoreline.count, predictionStats.total, locale)}
+                        </strong>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="muted">{t.matches.noStats}</p>
+                )}
+              </div>
+            </div>
+          </section>
+        ) : locked ? (
+          <div className="notice">{t.matches.noStats}</div>
+        ) : null}
+        {locked ? <span className="match-card-cta">{t.matches.viewLivePicks}</span> : null}
+      </article>
+    );
+  };
 
   return (
     <main className="page">
@@ -96,186 +307,15 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
           <input name="matchIds" type="hidden" value={unlockedMatchIds.join(",")} />
 
           <section className="match-list">
-            {matches.map((match) => {
-              const locked = new Date(match.kickoff_utc).getTime() <= now;
-              const homeName = displayName(
-                match.home_team_name,
-                match.home_team_placeholder ?? t.matches.fallbackTeam,
-              );
-              const awayName = displayName(
-                match.away_team_name,
-                match.away_team_placeholder ?? t.matches.fallbackTeam,
-              );
-              const predictionStats =
-                locked && match.prediction_stats && match.prediction_stats.total > 0
-                  ? match.prediction_stats
-                  : null;
-              const outcomeRows = predictionStats
-                ? [
-                    {
-                      className: "home",
-                      count: predictionStats.outcomes.home,
-                      label: homeName,
-                    },
-                    {
-                      className: "draw",
-                      count: predictionStats.outcomes.draw,
-                      label: t.matches.draw,
-                    },
-                    {
-                      className: "away",
-                      count: predictionStats.outcomes.away,
-                      label: awayName,
-                    },
-                  ]
-                : [];
-              const commonScorelines = predictionStats?.scorelines.slice(0, 5) ?? [];
-
-              return (
-                <article className="match-card" key={match.id}>
-                  <div className="row">
-                    <span className="muted">
-                      {t.matches.match} {match.match_number} · {match.group_name ?? match.round}
-                    </span>
-                    <span className="muted">
-                      <LocalKickoff iso={match.kickoff_utc} locale={locale} />
-                    </span>
-                  </div>
-
-                  <div className="match-title">
-                    <TeamName
-                      canonicalName={match.home_team_name}
-                      className="team"
-                      name={homeName}
-                    />
-                    <span className="muted">{t.matches.versus}</span>
-                    <TeamName
-                      canonicalName={match.away_team_name}
-                      className="team"
-                      name={awayName}
-                    />
-                  </div>
-
-                  {match.result_home_goals !== null && match.result_away_goals !== null ? (
-                    <div className="notice">
-                      {t.matches.result}: {match.result_home_goals} x {match.result_away_goals}
-                      {match.result_resolution === "penalties" &&
-                      match.result_home_penalties !== null &&
-                      match.result_away_penalties !== null
-                        ? ` (${match.result_home_penalties} x ${match.result_away_penalties} ${t.matches.penaltiesShort})`
-                        : ""}
-                      {formatResolution(match.result_resolution, t.matches)
-                        ? ` ${formatResolution(match.result_resolution, t.matches)}`
-                        : ""}
-                    </div>
-                  ) : null}
-
-                  {match.odds_captured_at !== null ? (
-                    <div className="notice">
-                      {t.matches.odds}: {t.matches.home}{" "}
-                      {formatProbability(match.odds_home_win_probability)} · {t.matches.draw}{" "}
-                      {formatProbability(match.odds_draw_probability)} · {t.matches.away}{" "}
-                      {formatProbability(match.odds_away_win_probability)}
-                    </div>
-                  ) : null}
-
-                  <div className="score-inputs">
-                    <label>
-                      <TeamName canonicalName={match.home_team_name} name={homeName} />
-                      <input
-                        aria-label={`${homeName} ${t.matches.goals}`}
-                        defaultValue={match.prediction_home_goals ?? ""}
-                        disabled={locked}
-                        min={0}
-                        name={`home-${match.id}`}
-                        type="number"
-                      />
-                    </label>
-                    <label>
-                      <TeamName canonicalName={match.away_team_name} name={awayName} />
-                      <input
-                        aria-label={`${awayName} ${t.matches.goals}`}
-                        defaultValue={match.prediction_away_goals ?? ""}
-                        disabled={locked}
-                        min={0}
-                        name={`away-${match.id}`}
-                        type="number"
-                      />
-                    </label>
-                    {locked ? <span className="muted">{t.matches.locked}</span> : null}
-                  </div>
-
-                  {predictionStats ? (
-                    <section className="prediction-stats" aria-label={t.matches.statistics}>
-                      <div className="prediction-stats-head">
-                        <div>
-                          <strong>{t.matches.statistics}</strong>
-                          <p className="muted">
-                            {t.matches.statsDescription.replace(
-                              "{count}",
-                              String(predictionStats.total),
-                            )}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="prediction-stats-grid">
-                        <div>
-                          <h3>{t.matches.winnerStats}</h3>
-                          <div className="stat-bars">
-                            {outcomeRows.map((row) => (
-                              <div className="stat-bar-row" key={row.label}>
-                                <span>{row.label}</span>
-                                <div className="stat-bar-track" aria-hidden="true">
-                                  <span
-                                    className={`stat-bar-fill ${row.className}`}
-                                    style={{ width: statsBarWidth(row.count, predictionStats.total) }}
-                                  />
-                                </div>
-                                <strong>{formatStatsShare(row.count, predictionStats.total, locale)}</strong>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div>
-                          <h3>{t.matches.commonScores}</h3>
-                          {commonScorelines.length > 0 ? (
-                            <div className="stat-bars">
-                              {commonScorelines.map((scoreline) => (
-                                <div
-                                  className="stat-bar-row"
-                                  key={`${scoreline.homeGoals}-${scoreline.awayGoals}`}
-                                >
-                                  <span>
-                                    {scoreline.homeGoals} x {scoreline.awayGoals}
-                                  </span>
-                                  <div className="stat-bar-track" aria-hidden="true">
-                                    <span
-                                      className="stat-bar-fill scoreline"
-                                      style={{
-                                        width: statsBarWidth(scoreline.count, predictionStats.total),
-                                      }}
-                                    />
-                                  </div>
-                                  <strong>
-                                    {formatStatsShare(scoreline.count, predictionStats.total, locale)}
-                                  </strong>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="muted">{t.matches.noStats}</p>
-                          )}
-                        </div>
-                      </div>
-                    </section>
-                  ) : locked ? (
-                    <div className="notice">{t.matches.noStats}</div>
-                  ) : null}
-                </article>
-              );
-            })}
+            {pastMatches.length > 0 ? (
+              <details className="past-matches">
+                <summary>
+                  {t.matches.pastMatches} ({pastMatches.length})
+                </summary>
+                <div className="past-matches-list">{pastMatches.map(renderMatchCard)}</div>
+              </details>
+            ) : null}
+            {upcomingMatches.map(renderMatchCard)}
           </section>
 
           <div className="match-form-actions">
