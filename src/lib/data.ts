@@ -496,6 +496,7 @@ export async function getClosedMatchDetail(
       odds_home_win_probability: odds?.home_win_probability ?? null,
       odds_draw_probability: odds?.draw_probability ?? null,
       odds_away_win_probability: odds?.away_win_probability ?? null,
+      prediction_stats: null,
     } as MatchWithPrediction,
     view,
   };

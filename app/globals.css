@@ -689,6 +689,33 @@ label {
   font-weight: 950;
 }
 
+.past-matches {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.past-matches summary {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  font-weight: 900;
+  justify-content: space-between;
+  padding: 0.8rem 1rem;
+}
+
+.past-matches summary:hover {
+  background: var(--panel-solid);
+}
+
+.past-matches-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
 .match-title {
   align-items: center;
   background:
@@ -822,6 +849,13 @@ label {
 
 .stat-bar-fill.away {
   background: #6aa9e9;
+}
+
+.prediction-points {
+  color: var(--brand-strong);
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 1.1;
 }
 
 .admin-score-inputs {
@@ -1283,6 +1317,18 @@ label {
 
 .ranking-table tr.current {
   background: rgba(13, 122, 89, 0.08);
+}
+
+.ranking-player {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.ranking-player-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .rank-delta {
