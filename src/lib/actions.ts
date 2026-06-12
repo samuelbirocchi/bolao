@@ -14,6 +14,7 @@ import { LOCALE_COOKIE, isLocale } from "@/lib/i18n";
 import { redeemInviteCode } from "@/lib/invites";
 import { buildOddsSnapshots, fetchWorldCupOdds } from "@/lib/odds";
 import { buildPredictionEntries } from "@/lib/predictions";
+import { pathWithSaveFeedback } from "@/lib/saveFeedback";
 import { syncWc2026MatchesForAdmin } from "@/lib/schedule/sync";
 import { createClient, hasSupabaseEnv } from "@/lib/supabase/server";
 
@@ -342,6 +343,7 @@ export async function savePredictionAction(formData: FormData) {
   }
 
   revalidatePath(`/groups/${groupId}/matches`);
+  redirect(pathWithSaveFeedback(`/groups/${groupId}/matches`, "predictions"));
 }
 
 export async function saveAllPredictionsAction(formData: FormData) {
@@ -404,6 +406,7 @@ export async function saveAllPredictionsAction(formData: FormData) {
   }
 
   revalidatePath(`/groups/${groupId}/matches`);
+  redirect(pathWithSaveFeedback(`/groups/${groupId}/matches`, "predictions"));
 }
 
 export async function updateScoringSettingsAction(formData: FormData) {
@@ -655,6 +658,7 @@ export async function updateProfileAction(formData: FormData) {
 
   revalidatePath("/settings");
   revalidatePath("/groups", "layout");
+  redirect(pathWithSaveFeedback("/settings", "profile"));
 }
 
 export async function removeAvatarAction() {
