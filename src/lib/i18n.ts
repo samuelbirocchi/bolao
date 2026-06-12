@@ -128,7 +128,13 @@ export const dictionaries = {
       winnerStats: "Winner",
       commonScores: "Most common scores",
       noStats: "No locked predictions yet.",
-      victoryPoints: "Win: {points} pts",
+      victoryPoints: {
+        points: "Win: {points} pts",
+        tooltip:
+          "A correct {team} win is {points} pts because its win odds are {probability}. Base points scale from {maxPoints} pts at {floor} or lower to {minPoints} pts at {ceiling} or higher, rounded.",
+        fallbackTooltip:
+          "A correct {team} win is {points} pts because no win odds were synced. Missing odds use the minimum base value of {minPoints} pts.",
+      },
     },
     leaderboard: {
       title: "Leaderboard",
@@ -370,7 +376,13 @@ export const dictionaries = {
       winnerStats: "Vencedor",
       commonScores: "Resultados mais comuns",
       noStats: "Nenhum palpite travado ainda.",
-      victoryPoints: "Vitória: {points} pts",
+      victoryPoints: {
+        points: "Vitória: {points} pts",
+        tooltip:
+          "Uma vitória correta de {team} vale {points} pts porque a chance nas odds é {probability}. Os pontos-base vão de {maxPoints} pts em {floor} ou menos até {minPoints} pts em {ceiling} ou mais, com arredondamento.",
+        fallbackTooltip:
+          "Uma vitória correta de {team} vale {points} pts porque nenhuma odd foi sincronizada. Sem odds, vale a pontuação base mínima de {minPoints} pts.",
+      },
     },
     leaderboard: {
       title: "Classificação",
@@ -614,7 +626,13 @@ export const dictionaries = {
       winnerStats: "Ganador",
       commonScores: "Resultados más comunes",
       noStats: "Aún no hay predicciones bloqueadas.",
-      victoryPoints: "Victoria: {points} pts",
+      victoryPoints: {
+        points: "Victoria: {points} pts",
+        tooltip:
+          "Una victoria correcta de {team} vale {points} pts porque su probabilidad en cuotas es {probability}. Los puntos base van de {maxPoints} pts con {floor} o menos a {minPoints} pts con {ceiling} o más, redondeados.",
+        fallbackTooltip:
+          "Una victoria correcta de {team} vale {points} pts porque no se sincronizaron cuotas. Sin cuotas se usa el valor base mínimo de {minPoints} pts.",
+      },
     },
     leaderboard: {
       title: "Clasificación",

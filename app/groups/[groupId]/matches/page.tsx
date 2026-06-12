@@ -33,12 +33,41 @@ function statsBarWidth(count: number, total: number) {
   return total === 0 ? "0%" : `${Math.max(2, Math.round((count / total) * 100))}%`;
 }
 
-function formatVictoryPoints(
+function fillTemplate(template: string, values: Record<string, string>) {
+  return Object.entries(values).reduce(
+    (copy, [key, value]) => copy.replaceAll(`{${key}}`, value),
+    template,
+  );
+}
+
+function buildVictoryPointCopy(
+  teamName: string,
   probability: number | null,
   weights: ScoreWeights,
-  label: string,
+  labels: {
+    fallbackTooltip: string;
+    points: string;
+    tooltip: string;
+  },
 ) {
-  return label.replace("{points}", String(calculateBasePoints(probability, weights)));
+  const points = calculateBasePoints(probability, weights);
+  const values = {
+    ceiling: formatProbability(weights.baseCeilingProbability),
+    floor: formatProbability(weights.baseFloorProbability),
+    maxPoints: String(weights.baseMaxPoints),
+    minPoints: String(weights.baseMinPoints),
+    points: String(points),
+    probability: formatProbability(probability),
+    team: teamName,
+  };
+
+  return {
+    label: fillTemplate(labels.points, values),
+    tooltip: fillTemplate(
+      probability === null ? labels.fallbackTooltip : labels.tooltip,
+      values,
+    ),
+  };
 }
 
 function formatResolution(
@@ -111,6 +140,18 @@ export default async function MatchesPage({ params }: MatchesPageProps) {
         ]
       : [];
     const commonScorelines = predictionStats?.scorelines.slice(0, 5) ?? [];
+    const homeVictoryPoints = buildVictoryPointCopy(
+      homeName,
+      match.odds_home_win_probability,
+      scoring,
+      t.matches.victoryPoints,
+    );
+    const awayVictoryPoints = buildVictoryPointCopy(
+      awayName,
+      match.odds_away_win_probability,
+      scoring,
+      t.matches.victoryPoints,
+    );
 
     return (
       <article className="match-card" key={match.id}>
@@ -154,12 +195,23 @@ export default async function MatchesPage({ params }: MatchesPageProps) {
         <div className="score-inputs">
           <label>
             <TeamName canonicalName={match.home_team_name} name={homeName} />
-            <span className="prediction-points">
-              {formatVictoryPoints(
-                match.odds_home_win_probability,
-                scoring,
-                t.matches.victoryPoints,
-              )}
+            <span
+              aria-describedby={`${match.id}-home-points-tooltip`}
+              className="prediction-points-help"
+              tabIndex={0}
+              title={homeVictoryPoints.tooltip}
+            >
+              <span className="prediction-points">{homeVictoryPoints.label}</span>
+              <span aria-hidden="true" className="prediction-points-icon">
+                ?
+              </span>
+              <span
+                className="prediction-points-tooltip"
+                id={`${match.id}-home-points-tooltip`}
+                role="tooltip"
+              >
+                {homeVictoryPoints.tooltip}
+              </span>
             </span>
             <input
               aria-label={`${homeName} ${t.matches.goals}`}
@@ -172,12 +224,23 @@ export default async function MatchesPage({ params }: MatchesPageProps) {
           </label>
           <label>
             <TeamName canonicalName={match.away_team_name} name={awayName} />
-            <span className="prediction-points">
-              {formatVictoryPoints(
-                match.odds_away_win_probability,
-                scoring,
-                t.matches.victoryPoints,
-              )}
+            <span
+              aria-describedby={`${match.id}-away-points-tooltip`}
+              className="prediction-points-help"
+              tabIndex={0}
+              title={awayVictoryPoints.tooltip}
+            >
+              <span className="prediction-points">{awayVictoryPoints.label}</span>
+              <span aria-hidden="true" className="prediction-points-icon">
+                ?
+              </span>
+              <span
+                className="prediction-points-tooltip"
+                id={`${match.id}-away-points-tooltip`}
+                role="tooltip"
+              >
+                {awayVictoryPoints.tooltip}
+              </span>
             </span>
             <input
               aria-label={`${awayName} ${t.matches.goals}`}
