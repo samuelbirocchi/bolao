@@ -43,7 +43,7 @@ test("post-match sync selects recently completed matches with results", () => {
 });
 
 test("post-match sync keeps old completed matches out of the cron window", () => {
-  const now = new Date("2026-06-13T12:00:00.000Z");
+  const now = new Date("2026-06-14T00:00:00.000Z");
   const selected = isPostMatchSyncCandidate(
     match({
       status: "completed",

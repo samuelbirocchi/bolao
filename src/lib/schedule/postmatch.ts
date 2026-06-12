@@ -1,6 +1,6 @@
 import type { ExternalMatch } from "./types.ts";
 
-export const POST_MATCH_SYNC_LOOKBACK_HOURS = 8;
+export const POST_MATCH_SYNC_LOOKBACK_HOURS = 30;
 export const POST_MATCH_SYNC_LOOKAHEAD_HOURS = 1;
 
 type PostMatchSyncOptions = {

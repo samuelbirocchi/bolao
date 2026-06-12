@@ -90,6 +90,8 @@ After deployment, open the production URL and verify:
 - WC2026 sync runs from `/admin/matches`.
 - Post-match WC2026 sync runs from `/api/cron/sync-matches` when called with
   `Authorization: Bearer <CRON_SECRET>`.
+- `vercel.json` uses a daily cron schedule so Hobby deployments pass. On Vercel
+  Pro, change the schedule to `*/30 * * * *` for a 30-minute post-match cadence.
 - Odds sync runs from `/admin/matches`.
 
 ## Supabase assumptions
