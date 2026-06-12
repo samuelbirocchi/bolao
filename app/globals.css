@@ -1444,3 +1444,43 @@ label {
     padding: 0.42rem 0.3rem;
   }
 }
+
+.ranking-chart-toggle-wrapper {
+  margin-top: 0.5rem;
+}
+
+.ranking-chart-toggle {
+  display: inline-flex;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.ranking-chart-toggle button {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 800;
+  min-height: auto;
+  padding: 0.35rem 0.75rem;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+
+.ranking-chart-toggle button.active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+.ranking-chart-toggle button:hover:not(.active) {
+  background: var(--panel-strong);
+  border-color: rgba(12, 42, 35, 0.22);
+  color: var(--text);
+  transform: none;
+}

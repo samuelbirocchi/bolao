@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { RankingChart, type RankingChartLine } from "@/components/RankingChart";
+import { type RankingChartLine } from "@/components/RankingChart";
+import { RankingChartToggle } from "@/components/RankingChartToggle";
 import { UserAvatar } from "@/components/UserAvatar";
 import { requireUser } from "@/lib/auth";
 import { getGroupDetail, getMatchRankingData, type LeaderboardEntry } from "@/lib/data";
@@ -129,87 +130,75 @@ export default async function RankingPage({ params }: RankingPageProps) {
         )}
       </section>
 
-      <RankingChart
-        steps={matchSteps}
-        lines={matchLines}
-        currentUserId={user.id}
-        maxRank={maxRank}
-        title={t.ranking.historyByMatch}
-        emptyLabel={t.ranking.noData}
-        xAxisLabel={t.ranking.chartXAxisMatch}
-      />
-
-      <RankingChart
-        steps={daySteps}
-        lines={dayLines}
-        currentUserId={user.id}
-        maxRank={maxRank}
-        title={t.ranking.historyByDay}
-        emptyLabel={t.ranking.noData}
-        xAxisLabel={t.ranking.chartXAxisDay}
-      />
-
       <section aria-label={t.ranking.performance}>
         <h2 className="section-heading">{t.ranking.performance}</h2>
         {hasMatches ? (
           <div className="grid three perf-grid">
-            {performanceSorted.map((stat) => (
-              <article className="perf-card" key={stat.userId}>
-                <details className="perf-detail">
-                  <summary>
-                    <div className="perf-card-head">
-                      <UserAvatar
-                        name={membersById.get(stat.userId)?.display_name ?? null}
-                        seed={stat.userId}
-                        url={membersById.get(stat.userId)?.avatar_url ?? null}
-                      />
-                      <div>
-                        <strong>{nameFor(stat.userId)}</strong>
-                        <p className="muted">
-                          {t.ranking.rank} {stat.currentRank} · {stat.currentPoints}{" "}
-                          {t.ranking.points}
-                        </p>
+            {performanceSorted.map((stat) => {
+              const playerMatchLine = matchLines.find((l) => l.userId === stat.userId);
+              const playerDayLine = dayLines.find((l) => l.userId === stat.userId);
+              return (
+                <article className="perf-card" key={stat.userId}>
+                  <details className="perf-detail">
+                    <summary>
+                      <div className="perf-card-head">
+                        <UserAvatar
+                          name={membersById.get(stat.userId)?.display_name ?? null}
+                          seed={stat.userId}
+                          url={membersById.get(stat.userId)?.avatar_url ?? null}
+                        />
+                        <div>
+                          <strong>{nameFor(stat.userId)}</strong>
+                          <p className="muted">
+                            {t.ranking.rank} {stat.currentRank} · {stat.currentPoints}{" "}
+                            {t.ranking.points}
+                          </p>
+                        </div>
                       </div>
+                    </summary>
+                    <RankingChartToggle
+                      matchSteps={matchSteps}
+                      matchLines={playerMatchLine ? [playerMatchLine] : []}
+                      daySteps={daySteps}
+                      dayLines={playerDayLine ? [playerDayLine] : []}
+                      userId={stat.userId}
+                      maxRank={maxRank}
+                      matchLabel={t.ranking.historyByMatch}
+                      dayLabel={t.ranking.historyByDay}
+                      emptyLabel={t.ranking.noData}
+                      matchXAxis={t.ranking.chartXAxisMatch}
+                      dayXAxis={t.ranking.chartXAxisDay}
+                    />
+                  </details>
+                  <dl className="perf-stats">
+                    <div>
+                      <dt>{t.ranking.bestMatch}</dt>
+                      <dd>{stat.bestMatchPoints}</dd>
                     </div>
-                  </summary>
-                  <RankingChart
-                    steps={matchSteps}
-                    lines={matchLines}
-                    currentUserId={stat.userId}
-                    maxRank={maxRank}
-                    title={t.ranking.positionHistory}
-                    emptyLabel={t.ranking.noData}
-                    xAxisLabel={t.ranking.chartXAxisMatch}
-                  />
-                </details>
-                <dl className="perf-stats">
-                  <div>
-                    <dt>{t.ranking.bestMatch}</dt>
-                    <dd>{stat.bestMatchPoints}</dd>
-                  </div>
-                  <div>
-                    <dt>{t.ranking.worstMatch}</dt>
-                    <dd>{stat.worstMatchPoints}</dd>
-                  </div>
-                  <div>
-                    <dt>{t.ranking.bestRank}</dt>
-                    <dd>#{stat.bestRank}</dd>
-                  </div>
-                  <div>
-                    <dt>{t.ranking.climb}</dt>
-                    <dd>{stat.biggestClimb > 0 ? `▲ ${stat.biggestClimb}` : "–"}</dd>
-                  </div>
-                  <div>
-                    <dt>{t.ranking.exact}</dt>
-                    <dd>{stat.exactScoreCount}</dd>
-                  </div>
-                  <div>
-                    <dt>{t.ranking.winners}</dt>
-                    <dd>{stat.winnerCount}</dd>
-                  </div>
-                </dl>
-              </article>
-            ))}
+                    <div>
+                      <dt>{t.ranking.worstMatch}</dt>
+                      <dd>{stat.worstMatchPoints}</dd>
+                    </div>
+                    <div>
+                      <dt>{t.ranking.bestRank}</dt>
+                      <dd>#{stat.bestRank}</dd>
+                    </div>
+                    <div>
+                      <dt>{t.ranking.climb}</dt>
+                      <dd>{stat.biggestClimb > 0 ? `▲ ${stat.biggestClimb}` : "–"}</dd>
+                    </div>
+                    <div>
+                      <dt>{t.ranking.exact}</dt>
+                      <dd>{stat.exactScoreCount}</dd>
+                    </div>
+                    <div>
+                      <dt>{t.ranking.winners}</dt>
+                      <dd>{stat.winnerCount}</dd>
+                    </div>
+                  </dl>
+                </article>
+              );
+            })}
           </div>
         ) : (
           <div className="empty">{t.ranking.noData}</div>
