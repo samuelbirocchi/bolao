@@ -113,7 +113,19 @@ export default async function MatchesPage({ params }: MatchesPageProps) {
     const commonScorelines = predictionStats?.scorelines.slice(0, 5) ?? [];
 
     return (
-      <article className="match-card" key={match.id}>
+      <article
+        className={locked ? "match-card match-card-clickable" : "match-card"}
+        key={match.id}
+      >
+        {locked ? (
+          <Link
+            aria-label={`${t.matches.viewLivePicks}: ${homeName} ${t.matches.versus} ${awayName}`}
+            className="match-card-overlay"
+            href={`/groups/${group.id}/matches/${match.id}`}
+          >
+            <span className="sr-only">{t.matches.viewLivePicks}</span>
+          </Link>
+        ) : null}
         <div className="row">
           <span className="muted">
             {t.matches.match} {match.match_number} · {match.group_name ?? match.round}
@@ -259,6 +271,7 @@ export default async function MatchesPage({ params }: MatchesPageProps) {
         ) : locked ? (
           <div className="notice">{t.matches.noStats}</div>
         ) : null}
+        {locked ? <span className="match-card-cta">{t.matches.viewLivePicks}</span> : null}
       </article>
     );
   };
