@@ -663,6 +663,33 @@ label {
   padding: 1rem;
 }
 
+.past-matches {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.past-matches summary {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  font-weight: 900;
+  justify-content: space-between;
+  padding: 0.8rem 1rem;
+}
+
+.past-matches summary:hover {
+  background: var(--panel-solid);
+}
+
+.past-matches-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
 .match-title {
   align-items: center;
   background:
