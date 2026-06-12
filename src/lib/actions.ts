@@ -16,6 +16,7 @@ import { buildOddsSnapshots, fetchWorldCupOdds } from "@/lib/odds";
 import { buildPredictionEntries } from "@/lib/predictions";
 import { pathWithSaveFeedback } from "@/lib/saveFeedback";
 import { syncWc2026MatchesForAdmin } from "@/lib/schedule/sync";
+import { configuredSiteOriginFromEnv, normalizeOrigin } from "@/lib/siteOrigin";
 import { createClient, hasSupabaseEnv } from "@/lib/supabase/server";
 
 const AVATAR_BUCKET = "avatars";
@@ -77,30 +78,13 @@ function readResolution(formData: FormData) {
   throw new Error("resolution must be regular, extra_time, or penalties.");
 }
 
-function normalizeOrigin(origin: string) {
-  return origin.trim().replace(/\/+$/, "");
-}
-
 function configuredSiteOrigin() {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-
-  if (configured) {
-    return normalizeOrigin(configured);
-  }
-
-  const vercelProductionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
-
-  if (vercelProductionUrl) {
-    return normalizeOrigin(`https://${vercelProductionUrl}`);
-  }
-
-  const vercelDeploymentUrl = process.env.VERCEL_URL?.trim();
-
-  if (vercelDeploymentUrl) {
-    return normalizeOrigin(`https://${vercelDeploymentUrl}`);
-  }
-
-  return null;
+  return configuredSiteOriginFromEnv({
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    VERCEL_ENV: process.env.VERCEL_ENV,
+    VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    VERCEL_URL: process.env.VERCEL_URL,
+  });
 }
 
 export async function signInWithEmail(formData: FormData) {

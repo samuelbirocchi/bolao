@@ -46,6 +46,21 @@ Keep it secret and never expose it with a `NEXT_PUBLIC_` prefix. `CRON_SECRET`
 secures Vercel cron invocations; Vercel sends it as the `Authorization: Bearer`
 header when calling `/api/cron/sync-matches`.
 
+## Preview environment variables
+
+Review branches use the production Supabase project so feature previews exercise
+the same auth, RLS policies, and data shape as production. Add these variables
+in Vercel for the **Preview** environment, scoped to all preview branches:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+Do not set `NEXT_PUBLIC_SITE_URL` in Preview; magic-link callbacks should use the
+current deployment URL from `VERCEL_URL`, not the production domain. Keep
+server-only production secrets such as `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`,
+and third-party API keys out of Preview unless a review deployment explicitly
+needs that capability and the production-data risk is accepted.
+
 ## Local pre-deploy verification
 
 Run the same checks before the first production deploy and before major release
