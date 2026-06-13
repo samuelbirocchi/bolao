@@ -270,70 +270,70 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
         </div>
 
         {predictionStats ? (
-          <section className="prediction-stats" aria-label={t.matches.statistics}>
-            <div className="prediction-stats-head">
-              <div>
-                <strong>{t.matches.statistics}</strong>
-                <p className="muted">
-                  {t.matches.statsDescription.replace(
-                    "{count}",
-                    String(predictionStats.total),
-                  )}
-                </p>
-              </div>
-            </div>
+          <details className="prediction-stats-details">
+            <summary className="prediction-stats-summary">
+              <strong>{t.matches.statistics}</strong>
+              <span className="muted">
+                {t.matches.statsDescription.replace(
+                  "{count}",
+                  String(predictionStats.total),
+                )}
+              </span>
+            </summary>
 
-            <div className="prediction-stats-grid">
-              <div>
-                <h3>{t.matches.winnerStats}</h3>
-                <div className="stat-bars">
-                  {outcomeRows.map((row) => (
-                    <div className="stat-bar-row" key={row.label}>
-                      <span>{row.label}</span>
-                      <div className="stat-bar-track" aria-hidden="true">
-                        <span
-                          className={`stat-bar-fill ${row.className}`}
-                          style={{ width: statsBarWidth(row.count, predictionStats.total) }}
-                        />
-                      </div>
-                      <strong>{formatStatsShare(row.count, predictionStats.total, locale)}</strong>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h3>{t.matches.commonScores}</h3>
-                {commonScorelines.length > 0 ? (
-                  <ol className="scoreline-list">
-                    {commonScorelines.map((scoreline) => (
-                      <li
-                        className="stat-bar-row"
-                        key={`${scoreline.homeGoals}-${scoreline.awayGoals}`}
-                      >
-                        <span>
-                          {scoreline.homeGoals} x {scoreline.awayGoals}
-                        </span>
+            <div className="prediction-stats">
+              <div className="prediction-stats-grid">
+                <div>
+                  <h3>{t.matches.winnerStats}</h3>
+                  <div className="stat-bars">
+                    {outcomeRows.map((row) => (
+                      <div className="stat-bar-row" key={row.label}>
+                        <span>{row.label}</span>
                         <div className="stat-bar-track" aria-hidden="true">
                           <span
-                            className="stat-bar-fill scoreline"
-                            style={{
-                              width: statsBarWidth(scoreline.count, predictionStats.total),
-                            }}
+                            className={`stat-bar-fill ${row.className}`}
+                            style={{ width: statsBarWidth(row.count, predictionStats.total) }}
                           />
                         </div>
-                        <strong>
-                          {formatStatsShare(scoreline.count, predictionStats.total, locale)}
-                        </strong>
-                      </li>
+                        <strong>{formatStatsShare(row.count, predictionStats.total, locale)}</strong>
+                      </div>
                     ))}
-                  </ol>
-                ) : (
-                  <p className="muted">{t.matches.noStats}</p>
-                )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3>{t.matches.commonScores}</h3>
+                  {commonScorelines.length > 0 ? (
+                    <ol className="scoreline-list">
+                      {commonScorelines.map((scoreline) => (
+                        <li
+                          className="stat-bar-row"
+                          key={`${scoreline.homeGoals}-${scoreline.awayGoals}`}
+                        >
+                          <span>
+                            {scoreline.homeGoals} x {scoreline.awayGoals}
+                          </span>
+                          <div className="stat-bar-track" aria-hidden="true">
+                            <span
+                              className="stat-bar-fill scoreline"
+                              style={{
+                                width: statsBarWidth(scoreline.count, predictionStats.total),
+                              }}
+                            />
+                          </div>
+                          <strong>
+                            {formatStatsShare(scoreline.count, predictionStats.total, locale)}
+                          </strong>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p className="muted">{t.matches.noStats}</p>
+                  )}
+                </div>
               </div>
             </div>
-          </section>
+          </details>
         ) : locked ? (
           <div className="notice">{t.matches.noStats}</div>
         ) : null}

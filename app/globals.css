@@ -761,29 +761,43 @@ label {
   text-align: center;
 }
 
+.prediction-stats-details {
+  position: relative;
+  z-index: 3;
+}
+
+.prediction-stats-summary {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  font-weight: 900;
+  gap: 0.5rem;
+  justify-content: space-between;
+  list-style-position: inside;
+  padding: 0.9rem;
+}
+
+.prediction-stats-summary:hover {
+  background: var(--panel-solid);
+}
+
+.prediction-stats-summary strong {
+  color: var(--text);
+  font-size: 1rem;
+}
+
 .prediction-stats {
   background: rgba(255, 255, 255, 0.58);
   border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: var(--radius-sm);
   display: grid;
   gap: 0.85rem;
+  margin-top: 0.5rem;
   padding: 0.9rem;
-}
-
-.prediction-stats-head {
-  align-items: flex-start;
-  display: flex;
-  justify-content: space-between;
-}
-
-.prediction-stats-head strong {
-  color: var(--text);
-  display: block;
-  font-size: 1rem;
-}
-
-.prediction-stats-head p {
-  margin: 0.2rem 0 0;
 }
 
 .prediction-stats-grid {
