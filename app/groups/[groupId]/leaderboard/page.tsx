@@ -7,7 +7,6 @@ import { requireUser } from "@/lib/auth";
 import { getGroupDetail, getLeaderboard, getMatchRankingData, getScoringSettings } from "@/lib/data";
 import { getDictionary, getLocale } from "@/lib/i18n/server";
 import { buildRanking } from "@/lib/ranking";
-import type { Locale } from "@/lib/i18n";
 
 type LeaderboardPageProps = {
   params: Promise<{ groupId: string }>;

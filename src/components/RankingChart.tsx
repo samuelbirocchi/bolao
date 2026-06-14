@@ -19,6 +19,11 @@ type RankingChartProps = {
   title: string;
   emptyLabel: string;
   xAxisLabel: string;
+  /**
+   * When true, the chart renders in single-line mode: no legend, a position
+   * badge on the last data point, and a title that includes the player name.
+   */
+  singleLine?: boolean;
 };
 
 // Inline SVG line chart — no client JS, server-rendered. Y axis is rank
@@ -39,6 +44,7 @@ export function RankingChart({
   title,
   emptyLabel,
   xAxisLabel,
+  singleLine,
 }: RankingChartProps) {
   if (steps.length === 0) {
     return (
@@ -59,6 +65,7 @@ export function RankingChart({
       : MARGIN.top + ((rank - 1) / (maxRank - 1)) * PLOT_H;
 
   const labelEvery = Math.ceil(steps.length / 16);
+  const isSingleLine = singleLine || lines.length === 1;
 
   return (
     <section className="card ranking-chart" aria-label={title}>
@@ -156,23 +163,63 @@ export function RankingChart({
             </g>
           );
         })}
+
+        {/* position badge for single-line mode */}
+        {isSingleLine && lines.length > 0 && (
+          <g>
+            {lines.map((line) => {
+              const lastIndex = line.ranks.length - 1;
+              const lastRank = line.ranks[lastIndex];
+              if (lastIndex < 0 || lastRank === undefined) return null;
+              const cx = xFor(lastIndex);
+              const cy = yFor(lastRank);
+              const badgeWidth = 34;
+              const badgeHeight = 20;
+              return (
+                <g key={`badge-${line.userId}`}>
+                  <rect
+                    x={cx - badgeWidth / 2}
+                    y={cy - badgeHeight / 2 - 18}
+                    width={badgeWidth}
+                    height={badgeHeight}
+                    rx={4}
+                    fill={colorForSeed(line.userId)}
+                    opacity={0.95}
+                  />
+                  <text
+                    x={cx}
+                    y={cy - 18 + 4}
+                    textAnchor="middle"
+                    fill="#fff"
+                    fontSize="12"
+                    fontWeight="800"
+                  >
+                    #{lastRank}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
+        )}
       </svg>
 
-      <ul className="ranking-chart-legend">
-        {lines.map((line) => (
-          <li
-            key={line.userId}
-            className={line.userId === currentUserId ? "current" : undefined}
-          >
-            <span
-              className="ranking-chart-swatch"
-              style={{ background: colorForSeed(line.userId) }}
-              aria-hidden="true"
-            />
-            {line.name ?? line.userId}
-          </li>
-        ))}
-      </ul>
+      {!isSingleLine && (
+        <ul className="ranking-chart-legend">
+          {lines.map((line) => (
+            <li
+              key={line.userId}
+              className={line.userId === currentUserId ? "current" : undefined}
+            >
+              <span
+                className="ranking-chart-swatch"
+                style={{ background: colorForSeed(line.userId) }}
+                aria-hidden="true"
+              />
+              {line.name ?? line.userId}
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
