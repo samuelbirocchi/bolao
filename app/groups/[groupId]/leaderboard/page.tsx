@@ -60,11 +60,20 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
               />
               <div>
                 <strong>{entry.display_name ?? t.leaderboard.player}</strong>
-                <p className="muted">
-                  {t.leaderboard.base} {entry.base_points} · {t.leaderboard.bonus}{" "}
-                  {entry.bonus_points} · {t.leaderboard.exact} {entry.exact_score_count} ·{" "}
-                  {t.leaderboard.winners} {entry.winner_count}
-                </p>
+                <div className="scoring-badges">
+                  <span className="scoring-badge">
+                    {t.leaderboard.base} <strong>{entry.base_points}</strong>
+                  </span>
+                  <span className="scoring-badge">
+                    {t.leaderboard.bonus} <strong>{entry.bonus_points}</strong>
+                  </span>
+                  <span className="scoring-badge">
+                    {t.leaderboard.exact} <strong>{entry.exact_score_count}</strong>
+                  </span>
+                  <span className="scoring-badge">
+                    {t.leaderboard.winners} <strong>{entry.winner_count}</strong>
+                  </span>
+                </div>
               </div>
               <span className="points">{entry.total_points}</span>
             </article>
