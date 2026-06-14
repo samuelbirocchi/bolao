@@ -199,76 +199,6 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
           </div>
         ) : null}
 
-        {match.odds_captured_at !== null ? (
-          <div className="notice">
-            {t.matches.odds}: {t.matches.home} {formatProbability(match.odds_home_win_probability)}{" "}
-            · {t.matches.draw} {formatProbability(match.odds_draw_probability)} ·{" "}
-            {t.matches.away} {formatProbability(match.odds_away_win_probability)}
-          </div>
-        ) : null}
-
-        <div className="score-inputs">
-          <label>
-            <TeamName canonicalName={match.home_team_name} name={homeName} />
-            <span
-              aria-describedby={`${match.id}-home-points-tooltip`}
-              className="prediction-points-help"
-              tabIndex={0}
-              title={homeVictoryPoints.tooltip}
-            >
-              <span className="prediction-points">{homeVictoryPoints.label}</span>
-              <span aria-hidden="true" className="prediction-points-icon">
-                ?
-              </span>
-              <span
-                className="prediction-points-tooltip"
-                id={`${match.id}-home-points-tooltip`}
-                role="tooltip"
-              >
-                {homeVictoryPoints.tooltip}
-              </span>
-            </span>
-            <input
-              aria-label={`${homeName} ${t.matches.goals}`}
-              defaultValue={match.prediction_home_goals ?? ""}
-              disabled={locked}
-              min={0}
-              name={`home-${match.id}`}
-              type="number"
-            />
-          </label>
-          <label>
-            <TeamName canonicalName={match.away_team_name} name={awayName} />
-            <span
-              aria-describedby={`${match.id}-away-points-tooltip`}
-              className="prediction-points-help"
-              tabIndex={0}
-              title={awayVictoryPoints.tooltip}
-            >
-              <span className="prediction-points">{awayVictoryPoints.label}</span>
-              <span aria-hidden="true" className="prediction-points-icon">
-                ?
-              </span>
-              <span
-                className="prediction-points-tooltip"
-                id={`${match.id}-away-points-tooltip`}
-                role="tooltip"
-              >
-                {awayVictoryPoints.tooltip}
-              </span>
-            </span>
-            <input
-              aria-label={`${awayName} ${t.matches.goals}`}
-              defaultValue={match.prediction_away_goals ?? ""}
-              disabled={locked}
-              min={0}
-              name={`away-${match.id}`}
-              type="number"
-            />
-          </label>
-          {locked ? <span className="muted">{t.matches.locked}</span> : null}
-        </div>
-
         {predictionStats ? (
           <section className="prediction-stats" aria-label={t.matches.statistics}>
             <div className="prediction-stats-head">
@@ -337,6 +267,79 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
         ) : locked ? (
           <div className="notice">{t.matches.noStats}</div>
         ) : null}
+
+        <div className="match-secondary">
+          {match.odds_captured_at !== null ? (
+            <div className="notice">
+              {t.matches.odds}: {t.matches.home} {formatProbability(match.odds_home_win_probability)}{" "}
+              · {t.matches.draw} {formatProbability(match.odds_draw_probability)} ·{" "}
+              {t.matches.away} {formatProbability(match.odds_away_win_probability)}
+            </div>
+          ) : null}
+
+          <div className="score-inputs">
+            <label>
+              <TeamName canonicalName={match.home_team_name} name={homeName} />
+              <span
+                aria-describedby={`${match.id}-home-points-tooltip`}
+                className="prediction-points-help"
+                tabIndex={0}
+                title={homeVictoryPoints.tooltip}
+              >
+                <span className="prediction-points">{homeVictoryPoints.label}</span>
+                <span aria-hidden="true" className="prediction-points-icon">
+                  ?
+                </span>
+                <span
+                  className="prediction-points-tooltip"
+                  id={`${match.id}-home-points-tooltip`}
+                  role="tooltip"
+                >
+                  {homeVictoryPoints.tooltip}
+                </span>
+              </span>
+              <input
+                aria-label={`${homeName} ${t.matches.goals}`}
+                defaultValue={match.prediction_home_goals ?? ""}
+                disabled={locked}
+                min={0}
+                name={`home-${match.id}`}
+                type="number"
+              />
+            </label>
+            <label>
+              <TeamName canonicalName={match.away_team_name} name={awayName} />
+              <span
+                aria-describedby={`${match.id}-away-points-tooltip`}
+                className="prediction-points-help"
+                tabIndex={0}
+                title={awayVictoryPoints.tooltip}
+              >
+                <span className="prediction-points">{awayVictoryPoints.label}</span>
+                <span aria-hidden="true" className="prediction-points-icon">
+                  ?
+                </span>
+                <span
+                  className="prediction-points-tooltip"
+                  id={`${match.id}-away-points-tooltip`}
+                  role="tooltip"
+                >
+                  {awayVictoryPoints.tooltip}
+                </span>
+              </span>
+              <input
+                aria-label={`${awayName} ${t.matches.goals}`}
+                defaultValue={match.prediction_away_goals ?? ""}
+                disabled={locked}
+                min={0}
+                name={`away-${match.id}`}
+                type="number"
+              />
+            </label>
+            {locked ? <span className="muted">{t.matches.locked}</span> : null}
+          </div>
+        </div>
+
         {locked ? <span className="match-card-cta">{t.matches.viewLivePicks}</span> : null}
       </article>
     );
