@@ -108,27 +108,28 @@ export default async function PlayerDetailPage({ params }: PlayerDetailPageProps
     })
     .filter((item): item is { match: RankingMatch; entry: PerMatchEntry } => item !== null);
 
-  const rankingEvolution = (
-    <>
-      <RankingChart
-        steps={matchSteps}
-        lines={matchLines}
-        currentUserId={userId}
-        maxRank={maxRank}
-        title={t.ranking.historyByMatch}
-        emptyLabel={t.ranking.noData}
-        xAxisLabel={t.ranking.chartXAxisMatch}
-      />
-      <RankingChart
-        steps={daySteps}
-        lines={dayLines}
-        currentUserId={userId}
-        maxRank={maxRank}
-        title={t.ranking.historyByDay}
-        emptyLabel={t.ranking.noData}
-        xAxisLabel={t.ranking.chartXAxisDay}
-      />
-    </>
+  const byMatchChart = (
+    <RankingChart
+      steps={matchSteps}
+      lines={matchLines}
+      currentUserId={userId}
+      maxRank={maxRank}
+      title={t.ranking.historyByMatch}
+      emptyLabel={t.ranking.noData}
+      xAxisLabel={t.ranking.chartXAxisMatch}
+    />
+  );
+
+  const byDayChart = (
+    <RankingChart
+      steps={daySteps}
+      lines={dayLines}
+      currentUserId={userId}
+      maxRank={maxRank}
+      title={t.ranking.historyByDay}
+      emptyLabel={t.ranking.noData}
+      xAxisLabel={t.ranking.chartXAxisDay}
+    />
   );
 
   const pointsByGame = (
@@ -211,7 +212,12 @@ export default async function PlayerDetailPage({ params }: PlayerDetailPageProps
       <PlayerDetailTabs
         rankingEvolutionLabel={t.ranking.rankingEvolution}
         pointsByGameLabel={t.ranking.pointsByGame}
-        rankingEvolution={rankingEvolution}
+        byMatchLabel={t.ranking.byMatch}
+        byDayLabel={t.ranking.byDay}
+        showAllLabel={t.ranking.showAll}
+        showLessLabel={t.ranking.showLess}
+        byMatchChart={byMatchChart}
+        byDayChart={byDayChart}
         pointsByGame={pointsByGame}
       />
     </main>

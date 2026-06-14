@@ -210,6 +210,10 @@ export const dictionaries = {
       pointsByGame: "Points by game",
       positionAfterMatch: "Position after match",
       matchNumber: "Match",
+      byMatch: "By match",
+      byDay: "By day",
+      showAll: "Show all",
+      showLess: "Show less",
     },
     adminMatches: {
       title: "Matches",
@@ -497,6 +501,10 @@ export const dictionaries = {
       pointsByGame: "Pontos por jogo",
       positionAfterMatch: "Posição após o jogo",
       matchNumber: "Jogo",
+      byMatch: "Por jogo",
+      byDay: "Por dia",
+      showAll: "Mostrar todos",
+      showLess: "Mostrar menos",
     },
     adminMatches: {
       title: "Jogos",
@@ -786,6 +794,10 @@ export const dictionaries = {
       pointsByGame: "Puntos por partido",
       positionAfterMatch: "Posición después del partido",
       matchNumber: "Partido",
+      byMatch: "Por partido",
+      byDay: "Por día",
+      showAll: "Mostrar todos",
+      showLess: "Mostrar menos",
     },
     adminMatches: {
       title: "Partidos",

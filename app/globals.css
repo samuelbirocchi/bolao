@@ -664,6 +664,45 @@ label {
   background: var(--brand-strong);
 }
 
+.sub-tabs {
+  margin-bottom: 0.5rem;
+}
+
+.sub-tabs button {
+  font-size: 0.82rem;
+  min-height: auto;
+  padding: 0.45rem 0.75rem;
+}
+
+.player-points-wrap {
+  position: relative;
+}
+
+.player-points-scroll {
+  transition: max-height 220ms ease;
+}
+
+.show-more-btn {
+  background: none;
+  border: none;
+  box-shadow: none;
+  color: var(--brand);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 900;
+  margin-top: 0.6rem;
+  padding: 0.4rem 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.show-more-btn:hover {
+  background: none;
+  box-shadow: none;
+  color: var(--brand-strong);
+  transform: none;
+}
+
 .match-list,
 .leaderboard {
   display: grid;
