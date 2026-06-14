@@ -22,6 +22,7 @@ export type RankingScore = {
   bonus_points: number;
   exact_score: boolean;
   correct_winner: boolean;
+  correct_draw: boolean;
 };
 
 export type RankingMember = {
@@ -208,7 +209,7 @@ export function buildRanking(
       const state = cumulative.get(member.user_id)!;
       state.cumulativePoints += score.base_points + score.bonus_points;
       state.exactScoreCount += score.exact_score ? 1 : 0;
-      state.winnerCount += score.correct_winner ? 1 : 0;
+      state.winnerCount += score.correct_winner || score.correct_draw ? 1 : 0;
     }
     timeline.push({ match, standings: rankStandings(members, cumulative, compare) });
   }

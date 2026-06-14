@@ -100,3 +100,71 @@ test("penalty shootout resolves tied goals to the shootout winner", () => {
   assert.equal(score.basePoints, defaultScoreWeights.baseMinPoints);
   assert.equal(score.penalties, true);
 });
+
+test("draw prediction with different scoreline earns base points and goal-difference bonus", () => {
+  const score = calculatePredictionScore(
+    { homeGoals: 2, awayGoals: 2 },
+    { homeGoals: 1, awayGoals: 1, resolution: "regular" },
+    defaultScoreWeights,
+    { homeWinProbability: 0.4, drawProbability: 0.2, awayWinProbability: 0.4 },
+  );
+
+  assert.equal(score.correctDraw, true);
+  assert.equal(score.correctWinner, false);
+  assert.equal(score.exactScore, false);
+  assert.equal(score.basePoints, calculateBasePoints(0.2, defaultScoreWeights));
+  assert.equal(score.goalDifference, true);
+  assert.equal(score.winnerGoals, false);
+  assert.equal(score.loserGoals, false);
+  assert.equal(
+    score.bonusPoints,
+    defaultScoreWeights.goalDifferenceBonusPoints,
+  );
+  assert.equal(score.points, score.basePoints + score.bonusPoints);
+});
+
+test("exact draw prediction earns exact-score bonus", () => {
+  const score = calculatePredictionScore(
+    { homeGoals: 1, awayGoals: 1 },
+    { homeGoals: 1, awayGoals: 1, resolution: "regular" },
+    defaultScoreWeights,
+    null,
+  );
+
+  assert.equal(score.correctDraw, true);
+  assert.equal(score.exactScore, true);
+  assert.equal(score.bonusPoints, defaultScoreWeights.exactScoreBonusPoints);
+  assert.equal(score.goalDifference, false);
+});
+
+test("draw prediction against non-draw result earns no points", () => {
+  const score = calculatePredictionScore(
+    { homeGoals: 1, awayGoals: 1 },
+    { homeGoals: 2, awayGoals: 1, resolution: "regular" },
+    defaultScoreWeights,
+    null,
+  );
+
+  assert.equal(score.correctDraw, false);
+  assert.equal(score.correctWinner, false);
+  assert.equal(score.basePoints, 0);
+  assert.equal(score.bonusPoints, 0);
+  assert.equal(score.points, 0);
+});
+
+test("draw prediction with draw result in extra time earns extra-time bonus", () => {
+  const score = calculatePredictionScore(
+    { homeGoals: 2, awayGoals: 2 },
+    { homeGoals: 1, awayGoals: 1, resolution: "extra_time" },
+    defaultScoreWeights,
+    null,
+  );
+
+  assert.equal(score.correctDraw, true);
+  assert.equal(score.extraTime, true);
+  assert.equal(score.basePoints, defaultScoreWeights.baseMinPoints);
+  assert.equal(
+    score.bonusPoints,
+    defaultScoreWeights.goalDifferenceBonusPoints + defaultScoreWeights.extraTimeBonusPoints,
+  );
+});
