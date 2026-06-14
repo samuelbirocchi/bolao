@@ -17,5 +17,9 @@ export function splitMatchesByKickoff<TMatch extends MatchKickoff>(
     }
   }
 
+  pastMatches.sort(
+    (a, b) => new Date(b.kickoff_utc).getTime() - new Date(a.kickoff_utc).getTime(),
+  );
+
   return { pastMatches, upcomingMatches };
 }
