@@ -64,7 +64,6 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
         <Link href={`/groups/${group.id}`}>{t.group.overview}</Link>
         <Link href={`/groups/${group.id}/matches`}>{t.group.matches}</Link>
         <Link href={`/groups/${group.id}/leaderboard`}>{t.group.leaderboard}</Link>
-        <Link href={`/groups/${group.id}/ranking`}>{t.group.ranking}</Link>
       </div>
 
       <section className="card live-match-hero">
