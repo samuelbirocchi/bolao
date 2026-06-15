@@ -294,3 +294,29 @@ test("competition ranking: tiebreaker preserves order within same rank", () => {
   assert.equal(currentStandings[1]!.userId, "bob");
   assert.equal(currentStandings[1]!.rank, 1);
 });
+
+test("correct-draw score credits cumulative points and winner count once the view emits correct_draw", () => {
+  // Mirrors the leaderboard rollup: a correct draw (correct_winner false,
+  // correct_draw true) with base_points > 0 must increment both
+  // cumulativePoints and winnerCount, proving the TS rollup credits draws once
+  // match_prediction_scores emits correct_draw (closes #46/#47).
+  const drawScore: RankingScore = {
+    user_id: "alice",
+    match_id: "m1",
+    base_points: 17,
+    bonus_points: 2,
+    exact_score: false,
+    correct_winner: false,
+    correct_draw: true,
+  };
+  const { currentStandings } = buildRanking([m1], [drawScore], [alice, bob]);
+
+  const aliceStanding = currentStandings.find((entry) => entry.userId === "alice")!;
+  assert.equal(aliceStanding.cumulativePoints, 19);
+  assert.equal(aliceStanding.winnerCount, 1);
+  assert.equal(aliceStanding.exactScoreCount, 0);
+
+  const bobStanding = currentStandings.find((entry) => entry.userId === "bob")!;
+  assert.equal(bobStanding.cumulativePoints, 0);
+  assert.equal(bobStanding.winnerCount, 0);
+});

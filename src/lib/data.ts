@@ -296,7 +296,7 @@ export async function getMatchRankingData(groupId: string): Promise<MatchRanking
   const [{ data: scores }, members, { data: matches }, { data: results }] = await Promise.all([
     supabase
       .from("match_prediction_scores")
-      .select("user_id, match_id, base_points, bonus_points, exact_score, correct_winner")
+      .select("user_id, match_id, base_points, bonus_points, exact_score, correct_winner, correct_draw")
       .eq("group_id", groupId),
     getLeaderboard(groupId),
     supabase
@@ -413,7 +413,7 @@ export async function getClosedMatchDetail(
     supabase.from("match_results").select("match_id"),
     supabase
       .from("match_prediction_scores")
-      .select("user_id, match_id, base_points, bonus_points, exact_score, correct_winner")
+      .select("user_id, match_id, base_points, bonus_points, exact_score, correct_winner, correct_draw")
       .eq("group_id", groupId),
     getScoringSettings(),
   ]);

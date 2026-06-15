@@ -65,7 +65,9 @@ test("buildLiveMatchView scores closed-match picks and rank movement against pre
     ],
     previousMatches: [match("m1", 1, "2026-06-11T16:00:00Z")],
     previousScores: [
-      score("alice", "m1", 10, 0, false, true),
+      // alice leads pre-m2 at 27; bob trails at 5. After m2's correct draw bob
+      // earns base(0.3)+exact = 22, landing on 27 — a genuine tie with alice.
+      score("alice", "m1", 27, 0, false, true),
       score("bob", "m1", 5, 0, false, true),
     ],
     probabilities: {
