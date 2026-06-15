@@ -1,3 +1,4 @@
+import { canonicalTeamName } from "./teamFlags.ts";
 import type { OutcomeProbabilities } from "@/lib/scoring";
 
 const DEFAULT_ODDS_API_BASE_URL = "https://api.the-odds-api.com";
@@ -44,6 +45,13 @@ export type OddsSnapshot = OutcomeProbabilities & {
   capturedAt: string;
 };
 
+export type OddsSyncResult = {
+  snapshots: OddsSnapshot[];
+  matchedCount: number;
+  unmatchedMatches: Array<{ matchId: string; homeTeam: string; awayTeam: string }>;
+  unmatchedEvents: Array<{ eventId: string; homeTeam: string; awayTeam: string }>;
+};
+
 function normalizeName(name: string) {
   return name
     .normalize("NFD")
@@ -52,6 +60,10 @@ function normalizeName(name: string) {
     .replace(/\b(the|men|women|national|team)\b/g, " ")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
+}
+
+function matchTeamName(name: string): string {
+  return canonicalTeamName(name);
 }
 
 function median(values: number[]) {
@@ -79,10 +91,10 @@ function calculateFairProbabilities(
   homeTeam: string,
   awayTeam: string,
 ): OutcomeProbabilities | null {
-  const homeName = normalizeName(homeTeam);
-  const awayName = normalizeName(awayTeam);
-  const home = outcomes.find((outcome) => normalizeName(outcome.name) === homeName);
-  const away = outcomes.find((outcome) => normalizeName(outcome.name) === awayName);
+  const homeName = matchTeamName(homeTeam);
+  const awayName = matchTeamName(awayTeam);
+  const home = outcomes.find((outcome) => matchTeamName(outcome.name) === homeName);
+  const away = outcomes.find((outcome) => matchTeamName(outcome.name) === awayName);
   const draw = outcomes.find((outcome) => isDrawOutcome(outcome.name));
 
   if (!home || !away || home.price <= 1 || away.price <= 1) {
@@ -148,13 +160,13 @@ type MatchedOddsEvent = {
 };
 
 function findMatchingEvent(match: MatchForOdds, events: OddsEvent[]): MatchedOddsEvent | null {
-  const homeName = normalizeName(match.home_team_name);
-  const awayName = normalizeName(match.away_team_name);
+  const homeName = matchTeamName(match.home_team_name);
+  const awayName = matchTeamName(match.away_team_name);
   const kickoffTime = new Date(match.kickoff_utc).getTime();
 
   for (const event of events) {
-    const eventHomeName = normalizeName(event.home_team);
-    const eventAwayName = normalizeName(event.away_team);
+    const eventHomeName = matchTeamName(event.home_team);
+    const eventAwayName = matchTeamName(event.away_team);
     const eventTime = new Date(event.commence_time).getTime();
     const withinOneDay = Math.abs(eventTime - kickoffTime) <= 24 * 60 * 60 * 1000;
 
@@ -174,37 +186,72 @@ function findMatchingEvent(match: MatchForOdds, events: OddsEvent[]): MatchedOdd
   return null;
 }
 
-export function buildOddsSnapshots(matches: MatchForOdds[], events: OddsEvent[]): OddsSnapshot[] {
+export function buildOddsSnapshots(
+  matches: MatchForOdds[],
+  events: OddsEvent[],
+): OddsSyncResult {
   const capturedAt = new Date().toISOString();
+  const matchedEventIds = new Set<string>();
+  const unmatchedMatches: OddsSyncResult["unmatchedMatches"] = [];
+  const snapshots: OddsSnapshot[] = [];
 
-  return matches
-    .map((match) => {
-      const matchEvent = findMatchingEvent(match, events);
-      const probabilities = matchEvent ? aggregateEventProbabilities(matchEvent.event) : null;
+  for (const match of matches) {
+    const matchEvent = findMatchingEvent(match, events);
 
-      if (!matchEvent || !probabilities) {
-        return null;
-      }
-
-      const homeWinProbability = matchEvent.reversed
-        ? probabilities.awayWinProbability
-        : probabilities.homeWinProbability;
-      const awayWinProbability = matchEvent.reversed
-        ? probabilities.homeWinProbability
-        : probabilities.awayWinProbability;
-
-      return {
+    if (!matchEvent) {
+      unmatchedMatches.push({
         matchId: match.id,
-        oddsEventId: matchEvent.event.id,
-        source: "the-odds-api",
-        bookmakerCount: probabilities.bookmakerCount,
-        capturedAt,
-        homeWinProbability,
-        drawProbability: probabilities.drawProbability,
-        awayWinProbability,
-      };
-    })
-    .filter(Boolean) as OddsSnapshot[];
+        homeTeam: match.home_team_name,
+        awayTeam: match.away_team_name,
+      });
+      continue;
+    }
+
+    matchedEventIds.add(matchEvent.event.id);
+
+    const probabilities = aggregateEventProbabilities(matchEvent.event);
+    if (!probabilities) {
+      unmatchedMatches.push({
+        matchId: match.id,
+        homeTeam: match.home_team_name,
+        awayTeam: match.away_team_name,
+      });
+      continue;
+    }
+
+    const homeWinProbability = matchEvent.reversed
+      ? probabilities.awayWinProbability
+      : probabilities.homeWinProbability;
+    const awayWinProbability = matchEvent.reversed
+      ? probabilities.homeWinProbability
+      : probabilities.awayWinProbability;
+
+    snapshots.push({
+      matchId: match.id,
+      oddsEventId: matchEvent.event.id,
+      source: "the-odds-api",
+      bookmakerCount: probabilities.bookmakerCount,
+      capturedAt,
+      homeWinProbability,
+      drawProbability: probabilities.drawProbability,
+      awayWinProbability,
+    });
+  }
+
+  const unmatchedEvents = events
+    .filter((event) => !matchedEventIds.has(event.id))
+    .map((event) => ({
+      eventId: event.id,
+      homeTeam: event.home_team,
+      awayTeam: event.away_team,
+    }));
+
+  return {
+    snapshots,
+    matchedCount: snapshots.length,
+    unmatchedMatches,
+    unmatchedEvents,
+  };
 }
 
 export async function fetchWorldCupOdds(): Promise<OddsEvent[]> {

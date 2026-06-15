@@ -41,10 +41,11 @@ production emails do not accidentally inherit a local development origin. Becaus
 public variable.
 
 `SUPABASE_SERVICE_ROLE_KEY` is only used by the server-side cron route so it can
-write match fixtures and final results without an interactive admin session.
-Keep it secret and never expose it with a `NEXT_PUBLIC_` prefix. `CRON_SECRET`
-secures Vercel cron invocations; Vercel sends it as the `Authorization: Bearer`
-header when calling `/api/cron/sync-matches`.
+write match fixtures, final results, and odds snapshots without an interactive
+admin session. Keep it secret and never expose it with a `NEXT_PUBLIC_` prefix.
+`CRON_SECRET` secures Vercel cron invocations; Vercel sends it as the
+`Authorization: Bearer` header when calling `/api/cron/sync-matches`. If
+`ODDS_API_KEY` is also set, the same cron automatically syncs pre-kickoff odds.
 
 ## Preview environment variables
 

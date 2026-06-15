@@ -63,7 +63,7 @@ PWA-first World Cup sweepstakes app for private groups of friends.
    where id = '<your-user-id>';
    ```
 
-6. Optional fixture sync:
+6. Optional fixture and odds sync:
 
    - Request a key from `https://www.wc2026api.com/`
    - Set `WC2026_API_KEY`
@@ -72,13 +72,14 @@ PWA-first World Cup sweepstakes app for private groups of friends.
      `CRON_SECRET`; the checked-in Vercel Hobby schedule calls
      `/api/cron/sync-matches` daily and sends `CRON_SECRET` as the bearer token.
      On Vercel Pro, change `vercel.json` to `*/30 * * * *` for a 30-minute cadence.
+   - If `ODDS_API_KEY` is also set, the daily cron automatically syncs pre-kickoff
+     odds alongside match results. Odds can also be synced manually from
+     `/admin/matches`.
 
-7. Optional odds sync:
+7. Optional odds-only config:
 
-   - Request a key from `https://the-odds-api.com/`
-   - Set `ODDS_API_KEY`
-   - Optionally set `ODDS_API_REGIONS` or `ODDS_API_BOOKMAKERS`
-   - Use `/admin/matches` to sync frozen pre-kickoff odds
+   - Set `ODDS_API_REGIONS` or `ODDS_API_BOOKMAKERS` to filter odds sources
+   - Odds are synced automatically when `ODDS_API_KEY` is configured in the cron
 
 8. Run the app:
 

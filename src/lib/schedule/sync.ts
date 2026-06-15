@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { buildOddsSnapshots, fetchWorldCupOdds, type OddsSyncResult } from "@/lib/odds";
 import { selectPostMatchSyncCandidates } from "./postmatch";
 import type { ExternalMatch } from "./types";
 import { fetchWc2026Matches } from "./wc2026";
@@ -143,5 +144,63 @@ export async function syncRecentWc2026Matches(now = new Date()) {
     ...summary,
     fetchedCount: externalMatches.length,
     selectedCount: selectedMatches.length,
+  };
+}
+
+export type OddsSyncSummary = {
+  matchedCount: number;
+  unmatchedCount: number;
+  unmatchedMatches: OddsSyncResult["unmatchedMatches"];
+};
+
+export async function syncOddsForCron(): Promise<OddsSyncSummary> {
+  if (!hasSupabaseServiceEnv()) {
+    throw new Error("Supabase service environment variables are not configured.");
+  }
+
+  const supabase = createServiceClient();
+  const now = new Date().toISOString();
+
+  const [{ data: matches, error: matchError }, oddsEvents] = await Promise.all([
+    supabase
+      .from("matches")
+      .select("id, home_team_name, away_team_name, kickoff_utc")
+      .gt("kickoff_utc", now),
+    fetchWorldCupOdds(),
+  ]);
+
+  if (matchError || !matches) {
+    throw new Error(matchError?.message ?? "Could not load matches for odds sync.");
+  }
+
+  const result = buildOddsSnapshots(matches, oddsEvents);
+  const rows = result.snapshots.map((snapshot) => ({
+    match_id: snapshot.matchId,
+    odds_event_id: snapshot.oddsEventId,
+    source: snapshot.source,
+    bookmaker_count: snapshot.bookmakerCount,
+    home_win_probability: snapshot.homeWinProbability,
+    draw_probability: snapshot.drawProbability,
+    away_win_probability: snapshot.awayWinProbability,
+    captured_at: snapshot.capturedAt,
+  }));
+
+  if (rows.length > 0) {
+    const { error } = await supabase
+      .from("match_odds_snapshots")
+      .upsert(rows, { onConflict: "match_id" });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  revalidatePath("/admin/matches");
+  revalidatePath("/groups", "layout");
+
+  return {
+    matchedCount: result.matchedCount,
+    unmatchedCount: result.unmatchedMatches.length,
+    unmatchedMatches: result.unmatchedMatches,
   };
 }
