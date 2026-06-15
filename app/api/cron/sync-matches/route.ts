@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthorizedCronRequest } from "@/lib/cron";
-import { syncRecentWc2026Matches } from "@/lib/schedule/sync";
+import { syncOddsForCron, syncRecentWc2026Matches } from "@/lib/schedule/sync";
 
 export const dynamic = "force-dynamic";
 
@@ -14,11 +14,22 @@ export async function GET(request: Request) {
   }
 
   try {
-    const summary = await syncRecentWc2026Matches();
+    const matchSummary = await syncRecentWc2026Matches();
+
+    let oddsSummary: Awaited<ReturnType<typeof syncOddsForCron>> | null = null;
+    if (process.env.ODDS_API_KEY) {
+      try {
+        oddsSummary = await syncOddsForCron();
+      } catch (oddsError) {
+        // Odds sync is best-effort; log but don't fail the whole cron.
+        console.error("Odds sync failed during cron:", oddsError);
+      }
+    }
 
     return NextResponse.json({
       ok: true,
-      ...summary,
+      ...matchSummary,
+      odds: oddsSummary,
     });
   } catch (error) {
     return NextResponse.json(
