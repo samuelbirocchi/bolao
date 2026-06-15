@@ -161,6 +161,7 @@ export const dictionaries = {
       rout: "Rout",
       extraTime: "Extra time",
       penalties: "Penalties",
+      complementaryInfo: "Complementary info",
     },
     leaderboard: {
       title: "Leaderboard",
@@ -442,6 +443,7 @@ export const dictionaries = {
       rout: "Goleada",
       extraTime: "Prorrogação",
       penalties: "Pênaltis",
+      complementaryInfo: "Informações complementares",
     },
     leaderboard: {
       title: "Classificação",
@@ -725,6 +727,7 @@ export const dictionaries = {
       rout: "Goleada",
       extraTime: "Prórroga",
       penalties: "Penales",
+      complementaryInfo: "Información complementaria",
     },
     leaderboard: {
       title: "Clasificación",

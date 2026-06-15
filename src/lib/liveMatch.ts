@@ -8,6 +8,7 @@ import {
   type ScoreWeights,
 } from "./scoring.ts";
 import { buildRanking, type RankingMatch, type RankingMember, type RankingScore } from "./ranking.ts";
+import { buildMatchPredictionStats, type PredictionScorelineStats } from "./prediction-stats.ts";
 
 export type MatchPickDistribution = {
   home: number;
@@ -47,6 +48,7 @@ export type LiveMatchParticipant = {
 export type LiveMatchView = {
   participants: LiveMatchParticipant[];
   distribution: MatchPickDistribution;
+  scorelines: PredictionScorelineStats[];
   currentUserMovement: {
     preMatchRank: number;
     liveRank: number;
@@ -170,9 +172,18 @@ export function buildLiveMatchView({
     });
   const currentUser = participants.find((participant) => participant.userId === currentUserId);
 
+  const predictionStatsInput = predictions.map((p) => ({
+    match_id: currentMatch.id,
+    home_goals: p.home_goals,
+    away_goals: p.away_goals,
+  }));
+  const scorelinesByMatch = buildMatchPredictionStats(predictionStatsInput);
+  const scorelines = scorelinesByMatch[currentMatch.id]?.scorelines ?? [];
+
   return {
     participants,
     distribution,
+    scorelines,
     currentUserMovement: currentUser
       ? {
           preMatchRank: currentUser.preMatchRank,
