@@ -1173,11 +1173,13 @@ label {
     grid-column: 1 / -1;
   }
 
-  .leader-row {
+  .leader-row,
+  .leader-summary {
     grid-template-columns: auto 1fr auto;
   }
 
-  .leader-row .avatar {
+  .leader-row .avatar,
+  .leader-summary .avatar {
     display: none;
   }
 }
@@ -1328,6 +1330,46 @@ label {
   box-shadow: var(--shadow-soft);
   padding: 1.05rem;
   backdrop-filter: blur(16px) saturate(1.18);
+}
+
+.leader-card {
+  display: block;
+  padding: 0;
+}
+
+.leader-detail summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 0.9rem;
+}
+
+.leader-detail summary::-webkit-details-marker {
+  display: none;
+}
+
+.leader-summary {
+  align-items: center;
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: auto auto 1fr auto;
+}
+
+.leader-detail > .perf-stats,
+.leader-detail > .ranking-chart-toggle-wrapper {
+  margin: 0 0.9rem;
+}
+
+.leader-detail > .ranking-chart-toggle-wrapper {
+  padding-bottom: 0.9rem;
+}
+
+.player-points-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.player-points-scroll .ranking-table {
+  min-width: 320px;
 }
 
 .perf-detail {
