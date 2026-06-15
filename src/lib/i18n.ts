@@ -214,6 +214,8 @@ export const dictionaries = {
       byDay: "By day",
       showAll: "Show all",
       showLess: "Show less",
+      dayGroup: "Day",
+      pointsScored: "pts",
     },
     adminMatches: {
       title: "Matches",
@@ -505,6 +507,8 @@ export const dictionaries = {
       byDay: "Por dia",
       showAll: "Mostrar todos",
       showLess: "Mostrar menos",
+      dayGroup: "Dia",
+      pointsScored: "pts",
     },
     adminMatches: {
       title: "Jogos",
@@ -798,6 +802,8 @@ export const dictionaries = {
       byDay: "Por día",
       showAll: "Mostrar todos",
       showLess: "Mostrar menos",
+      dayGroup: "Día",
+      pointsScored: "pts",
     },
     adminMatches: {
       title: "Partidos",

@@ -674,33 +674,90 @@ label {
   padding: 0.45rem 0.75rem;
 }
 
-.player-points-wrap {
-  position: relative;
+.player-detail-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
+  padding: 0.5rem 0;
+  margin: 0 -0.5rem;
+  padding-inline: 0.5rem;
 }
 
-.player-points-scroll {
-  transition: max-height 220ms ease;
+.player-chart-scroll {
+  max-height: 60vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-.show-more-btn {
-  background: none;
-  border: none;
-  box-shadow: none;
-  color: var(--brand);
+.player-day-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.player-day-group {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.player-day-group[open] {
+  box-shadow: var(--shadow-soft);
+}
+
+.player-day-summary {
+  align-items: center;
+  background: var(--panel);
   cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 900;
-  margin-top: 0.6rem;
-  padding: 0.4rem 0;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  display: flex;
+  font-weight: 800;
+  gap: 0.75rem;
+  list-style: none;
+  padding: 0.75rem 1rem;
+  user-select: none;
 }
 
-.show-more-btn:hover {
-  background: none;
-  box-shadow: none;
-  color: var(--brand-strong);
-  transform: none;
+.player-day-summary::-webkit-details-marker {
+  display: none;
+}
+
+.player-day-summary::before {
+  content: "▸";
+  color: var(--muted);
+  font-size: 0.8rem;
+  transition: transform 160ms ease;
+}
+
+.player-day-group[open] > .player-day-summary::before {
+  transform: rotate(90deg);
+}
+
+.player-day-label {
+  flex: 1;
+}
+
+.player-day-count {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.player-day-total {
+  background: var(--brand);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 0.2rem 0.6rem;
+}
+
+.player-day-matches {
+  padding: 0;
+}
+
+.player-day-matches .ranking-table {
+  margin: 0;
 }
 
 .match-list,
@@ -1606,6 +1663,20 @@ label {
   }
 
   .player-points .ranking-table td:nth-child(2) {
+    font-size: 0.82rem;
+  }
+
+  .player-day-summary {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .player-day-count {
+    font-size: 0.75rem;
+  }
+
+  .player-day-matches .ranking-table td:nth-child(2) {
     font-size: 0.82rem;
   }
 }

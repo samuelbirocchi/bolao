@@ -108,6 +108,18 @@ export default async function PlayerDetailPage({ params }: PlayerDetailPageProps
     })
     .filter((item): item is { match: RankingMatch; entry: PerMatchEntry } => item !== null);
 
+  const dayGroups = new Map<string, { date: string; matches: typeof playerPerMatch }>();
+  for (const item of playerPerMatch) {
+    const dayKey = item.match.kickoff_utc.slice(0, 10);
+    const existing = dayGroups.get(dayKey);
+    if (existing) {
+      existing.matches.push(item);
+    } else {
+      dayGroups.set(dayKey, { date: dayKey, matches: [item] });
+    }
+  }
+  const playerPerDay = [...dayGroups.values()];
+
   const byMatchChart = (
     <RankingChart
       steps={matchSteps}
@@ -135,41 +147,58 @@ export default async function PlayerDetailPage({ params }: PlayerDetailPageProps
   const pointsByGame = (
     <section className="card player-points" aria-label={t.ranking.pointsByGame}>
       <h2>{t.ranking.pointsByGame}</h2>
-      {playerPerMatch.length > 0 ? (
-        <div className="stack">
-          <table className="ranking-table">
-            <thead>
-              <tr>
-                <th>{t.ranking.matchNumber}</th>
-                <th>{t.matches.versus}</th>
-                <th>{t.ranking.matchPoints}</th>
-                <th>{t.ranking.total}</th>
-                <th>{t.ranking.positionAfterMatch}</th>
-                <th>{t.ranking.change}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {playerPerMatch.map((item) => (
-                <tr key={item.match.id}>
-                  <td>{item.match.match_number}</td>
-                  <td>
-                    {matchTitle(
-                      item.match.match_number,
-                      item.match.home_team_name,
-                      item.match.away_team_name,
-                      t.matches.match,
-                      t.matches.fallbackTeam,
-                      t.matches.versus,
-                    )}
-                  </td>
-                  <td>{item.entry.matchPoints}</td>
-                  <td>{item.entry.cumulativePoints}</td>
-                  <td>#{item.entry.rank}</td>
-                  <td>{rankDelta(item.entry.rankDelta)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {playerPerDay.length > 0 ? (
+        <div className="player-day-groups">
+          {playerPerDay.map((group) => (
+            <details key={group.date} className="player-day-group">
+              <summary className="player-day-summary">
+                <span className="player-day-label">
+                  {t.ranking.dayGroup} {formatDayShort(group.date, locale)}
+                </span>
+                <span className="player-day-count">
+                  {group.matches.length} {t.ranking.matchNumber.toLowerCase()}(s)
+                </span>
+                <span className="player-day-total">
+                  {group.matches.reduce((sum, m) => sum + m.entry.matchPoints, 0)} {t.ranking.pointsScored}
+                </span>
+              </summary>
+              <div className="player-day-matches">
+                <table className="ranking-table">
+                  <thead>
+                    <tr>
+                      <th>{t.ranking.matchNumber}</th>
+                      <th>{t.matches.versus}</th>
+                      <th>{t.ranking.matchPoints}</th>
+                      <th>{t.ranking.total}</th>
+                      <th>{t.ranking.positionAfterMatch}</th>
+                      <th>{t.ranking.change}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.matches.map((item) => (
+                      <tr key={item.match.id}>
+                        <td>{item.match.match_number}</td>
+                        <td>
+                          {matchTitle(
+                            item.match.match_number,
+                            item.match.home_team_name,
+                            item.match.away_team_name,
+                            t.matches.match,
+                            t.matches.fallbackTeam,
+                            t.matches.versus,
+                          )}
+                        </td>
+                        <td>{item.entry.matchPoints}</td>
+                        <td>{item.entry.cumulativePoints}</td>
+                        <td>#{item.entry.rank}</td>
+                        <td>{rankDelta(item.entry.rankDelta)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          ))}
         </div>
       ) : (
         <div className="empty">{t.ranking.noData}</div>
@@ -214,8 +243,6 @@ export default async function PlayerDetailPage({ params }: PlayerDetailPageProps
         pointsByGameLabel={t.ranking.pointsByGame}
         byMatchLabel={t.ranking.byMatch}
         byDayLabel={t.ranking.byDay}
-        showAllLabel={t.ranking.showAll}
-        showLessLabel={t.ranking.showLess}
         byMatchChart={byMatchChart}
         byDayChart={byDayChart}
         pointsByGame={pointsByGame}
