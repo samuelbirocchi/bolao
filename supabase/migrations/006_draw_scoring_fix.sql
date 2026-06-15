@@ -119,6 +119,10 @@ prediction_scores as (
     case
       when not (correct_winner or correct_draw) then 0
       when picked_probability is null then base_min_points
+      -- Mirrors calculateBasePoints (scoring.ts): a zero-width probability
+      -- band has no gradient, so fall back to base_min_points instead of
+      -- dividing by zero (the nullif below would otherwise yield null).
+      when base_floor_probability = base_ceiling_probability then base_min_points
       else round(
         (
           base_max_points

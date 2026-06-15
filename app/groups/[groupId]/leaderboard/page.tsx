@@ -82,13 +82,20 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
     return { userId, name: nameFor(userId), ranks: series.points.map((point) => point.rank) };
   };
 
-  const dayLineFor = (userId: string): RankingChartLine | null => ({
-    userId,
-    name: nameFor(userId),
-    ranks: model.byDay.map(
-      (day) => day.standings.find((entry) => entry.userId === userId)?.rank ?? maxRank,
-    ),
-  });
+  const dayLineFor = (userId: string): RankingChartLine | null => {
+    // Mirror matchLineFor: a user with no ranking series has no line at all,
+    // rather than being plotted in last place on the by-day chart.
+    if (!model.series.some((s) => s.userId === userId)) {
+      return null;
+    }
+    return {
+      userId,
+      name: nameFor(userId),
+      ranks: model.byDay.map(
+        (day) => day.standings.find((entry) => entry.userId === userId)?.rank ?? maxRank,
+      ),
+    };
+  };
 
   const matchLabel = (matchNumber: number, home: string, away: string) =>
     `${t.matches.match} ${matchNumber} · ${displayName(home, t.matches.fallbackTeam)} ${t.matches.versus} ${displayName(away, t.matches.fallbackTeam)}`;

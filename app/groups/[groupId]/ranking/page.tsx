@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
 type RankingPageProps = {
   params: Promise<{ groupId: string }>;
@@ -8,5 +8,5 @@ type RankingPageProps = {
 // permanent redirect so existing links and bookmarks still resolve.
 export default async function RankingPage({ params }: RankingPageProps) {
   const { groupId } = await params;
-  redirect(`/groups/${groupId}/leaderboard`);
+  permanentRedirect(`/groups/${groupId}/leaderboard`);
 }
