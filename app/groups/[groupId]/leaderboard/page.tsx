@@ -23,6 +23,16 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
     notFound();
   }
 
+  // Competition ranking: entries with the same total_points share the same rank,
+  // and the next rank skips accordingly (1, 1, 3 not 1, 1, 2).
+  const rankedEntries: { entry: (typeof entries)[number]; rank: number }[] = [];
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i]!;
+    const prev = i > 0 ? rankedEntries[i - 1] : null;
+    const rank = prev && prev.entry.total_points === entry.total_points ? prev.rank : i + 1;
+    rankedEntries.push({ entry, rank });
+  }
+
   return (
     <main className="page">
       <div className="page-title">
@@ -50,9 +60,9 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
         <div className="empty">{t.leaderboard.empty}</div>
       ) : (
         <section className="leaderboard">
-          {entries.map((entry, index) => (
+          {rankedEntries.map(({ entry, rank }) => (
             <article className="leader-row" key={entry.user_id}>
-              <span className="rank">{index + 1}</span>
+              <span className="rank">{rank}</span>
               <UserAvatar
                 name={entry.display_name}
                 seed={entry.user_id}

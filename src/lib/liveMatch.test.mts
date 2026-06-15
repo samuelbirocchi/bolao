@@ -97,7 +97,7 @@ test("buildLiveMatchView scores closed-match picks and rank movement against pre
 
   const aliceEntry = view.participants.find((participant) => participant.userId === "alice")!;
   assert.equal(aliceEntry.points, 0);
-  assert.equal(aliceEntry.rankDelta, -1);
+  assert.equal(aliceEntry.rankDelta, 0); // tied with bob after m2, no rank change
 });
 
 test("buildLiveMatchView opens the closed-match view before the first official score", () => {

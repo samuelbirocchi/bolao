@@ -59,7 +59,8 @@ export default async function RankingPage({ params }: RankingPageProps) {
   const nameFor = (userId: string) =>
     membersById.get(userId)?.display_name ?? t.leaderboard.player;
 
-  const maxRank = Math.max(1, model.members.length);
+  const allRanks = model.series.flatMap((s) => s.points.map((p) => p.rank));
+  const maxRank = Math.max(1, ...allRanks);
   const hasMatches = model.timeline.length > 0;
   const current = model.currentStandings.find((entry) => entry.userId === user.id) ?? null;
   const performanceSorted = [...model.performance].sort((a, b) => a.currentRank - b.currentRank);

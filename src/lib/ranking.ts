@@ -143,6 +143,10 @@ function makeComparator(joinedAt: Map<string, string>) {
   };
 }
 
+function isPointsTied(a: StandingEntry, b: StandingEntry): boolean {
+  return a.cumulativePoints === b.cumulativePoints;
+}
+
 function rankStandings(
   members: RankingMember[],
   cumulative: Map<string, CumulativeState>,
@@ -160,7 +164,16 @@ function rankStandings(
   });
   standings.sort(compare);
   standings.forEach((entry, index) => {
-    entry.rank = index + 1;
+    if (index === 0) {
+      entry.rank = 1;
+    } else {
+      const prev = standings[index - 1];
+      if (isPointsTied(prev, entry)) {
+        entry.rank = prev.rank;
+      } else {
+        entry.rank = index + 1;
+      }
+    }
   });
   return standings;
 }
