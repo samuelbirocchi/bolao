@@ -39,6 +39,7 @@ export type PredictionScore = {
   bonusPoints: number;
   exactScore: boolean;
   correctWinner: boolean;
+  correctDraw: boolean;
   predictedWinner: OutcomeSide | null;
   resultWinner: OutcomeSide | null;
   winnerGoals: boolean;
@@ -148,9 +149,14 @@ export function calculatePredictionScore(
   const predictedWinner = scoreWinner(prediction);
   const finalWinner = resultWinner(result);
   const correctWinner = predictedWinner !== null && predictedWinner === finalWinner;
+  const correctDraw = predictedWinner === null && finalWinner === null;
   const pickedProbability =
-    predictedWinner === null ? null : probabilityForWinner(predictedWinner, probabilities);
-  const basePoints = correctWinner ? calculateBasePoints(pickedProbability, weights) : 0;
+    predictedWinner === null
+      ? (probabilities?.drawProbability ?? null)
+      : probabilityForWinner(predictedWinner, probabilities);
+  const basePoints = correctWinner || correctDraw
+    ? calculateBasePoints(pickedProbability, weights)
+    : 0;
 
   const winnerGoals =
     !exactScore &&
@@ -159,7 +165,7 @@ export function calculatePredictionScore(
     goalsForSide(prediction, predictedWinner) === goalsForSide(result, predictedWinner);
   const goalDifference =
     !exactScore &&
-    correctWinner &&
+    (correctWinner || correctDraw) &&
     Math.abs(prediction.homeGoals - prediction.awayGoals) ===
       Math.abs(result.homeGoals - result.awayGoals);
   const loserGoals =
@@ -172,8 +178,8 @@ export function calculatePredictionScore(
     predictedWinner !== null &&
     goalsForSide(prediction, predictedWinner) >= 4 &&
     goalsForSide(result, predictedWinner) >= 4;
-  const extraTime = correctWinner && result.resolution === "extra_time";
-  const penalties = correctWinner && result.resolution === "penalties";
+  const extraTime = (correctWinner || correctDraw) && result.resolution === "extra_time";
+  const penalties = (correctWinner || correctDraw) && result.resolution === "penalties";
 
   const bonusPoints =
     (exactScore ? weights.exactScoreBonusPoints : 0) +
@@ -190,6 +196,7 @@ export function calculatePredictionScore(
     bonusPoints,
     exactScore,
     correctWinner,
+    correctDraw,
     predictedWinner,
     resultWinner: finalWinner,
     winnerGoals,
@@ -198,6 +205,6 @@ export function calculatePredictionScore(
     rout,
     extraTime,
     penalties,
-    usedFallbackProbability: correctWinner && pickedProbability === null,
+    usedFallbackProbability: (correctWinner || correctDraw) && pickedProbability === null,
   };
 }

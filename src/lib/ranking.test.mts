@@ -52,6 +52,7 @@ function score(
     bonus_points: bonus,
     exact_score: exact,
     correct_winner: winner,
+    correct_draw: false,
   };
 }
 
