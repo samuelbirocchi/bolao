@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RankingChart, type RankingChartLine } from "@/components/RankingChart";
 import { UserAvatar } from "@/components/UserAvatar";
-import { PlayerDetailTabs } from "@/components/PlayerDetailTabs";
+import { PlayerDetailContent } from "@/components/PlayerDetailTabs";
 import { requireUser } from "@/lib/auth";
 import { getGroupDetail, getMatchRankingData, type LeaderboardEntry } from "@/lib/data";
 import { displayName } from "@/lib/format";
@@ -18,16 +18,6 @@ function formatDayShort(date: string, locale: Locale) {
   }).format(new Date(`${date}T00:00:00Z`));
 }
 
-function rankDelta(delta: number) {
-  if (delta > 0) {
-    return <span className="rank-delta up">▲ {delta}</span>;
-  }
-  if (delta < 0) {
-    return <span className="rank-delta down">▼ {Math.abs(delta)}</span>;
-  }
-  return <span className="rank-delta flat">–</span>;
-}
-
 function matchTitle(
   matchNumber: number,
   home: string,
@@ -41,6 +31,27 @@ function matchTitle(
 
 type PlayerDetailPageProps = {
   params: Promise<{ groupId: string; userId: string }>;
+};
+
+type MatchCardItem = {
+  type: "match";
+  id: string;
+  matchNumber: number;
+  homeTeam: string;
+  awayTeam: string;
+  matchPoints: number;
+  cumulativePoints: number;
+  rank: number;
+  rankDelta: number;
+  date: string;
+};
+
+type DayDividerItem = {
+  type: "divider";
+  date: string;
+  dateLabel: string;
+  matchCount: number;
+  dayPoints: number;
 };
 
 export default async function PlayerDetailPage({ params }: PlayerDetailPageProps) {
@@ -108,17 +119,36 @@ export default async function PlayerDetailPage({ params }: PlayerDetailPageProps
     })
     .filter((item): item is { match: RankingMatch; entry: PerMatchEntry } => item !== null);
 
-  const dayGroups = new Map<string, { date: string; matches: typeof playerPerMatch }>();
+  const matchCards: (MatchCardItem | DayDividerItem)[] = [];
+  let currentDay = "";
   for (const item of playerPerMatch) {
     const dayKey = item.match.kickoff_utc.slice(0, 10);
-    const existing = dayGroups.get(dayKey);
-    if (existing) {
-      existing.matches.push(item);
-    } else {
-      dayGroups.set(dayKey, { date: dayKey, matches: [item] });
+    if (dayKey !== currentDay) {
+      const dayMatches = playerPerMatch.filter(
+        (m) => m.match.kickoff_utc.slice(0, 10) === dayKey,
+      );
+      matchCards.push({
+        type: "divider",
+        date: dayKey,
+        dateLabel: formatDayShort(dayKey, locale),
+        matchCount: dayMatches.length,
+        dayPoints: dayMatches.reduce((sum, m) => sum + m.entry.matchPoints, 0),
+      });
+      currentDay = dayKey;
     }
+    matchCards.push({
+      type: "match",
+      id: item.match.id,
+      matchNumber: item.match.match_number,
+      homeTeam: item.match.home_team_name,
+      awayTeam: item.match.away_team_name,
+      matchPoints: item.entry.matchPoints,
+      cumulativePoints: item.entry.cumulativePoints,
+      rank: item.entry.rank,
+      rankDelta: item.entry.rankDelta,
+      date: dayKey,
+    });
   }
-  const playerPerDay = [...dayGroups.values()];
 
   const byMatchChart = (
     <RankingChart
@@ -142,68 +172,6 @@ export default async function PlayerDetailPage({ params }: PlayerDetailPageProps
       emptyLabel={t.ranking.noData}
       xAxisLabel={t.ranking.chartXAxisDay}
     />
-  );
-
-  const pointsByGame = (
-    <section className="card player-points" aria-label={t.ranking.pointsByGame}>
-      <h2>{t.ranking.pointsByGame}</h2>
-      {playerPerDay.length > 0 ? (
-        <div className="player-day-groups">
-          {playerPerDay.map((group) => (
-            <details key={group.date} className="player-day-group">
-              <summary className="player-day-summary">
-                <span className="player-day-label">
-                  {t.ranking.dayGroup} {formatDayShort(group.date, locale)}
-                </span>
-                <span className="player-day-count">
-                  {group.matches.length} {t.ranking.matchNumber.toLowerCase()}(s)
-                </span>
-                <span className="player-day-total">
-                  {group.matches.reduce((sum, m) => sum + m.entry.matchPoints, 0)} {t.ranking.pointsScored}
-                </span>
-              </summary>
-              <div className="player-day-matches">
-                <table className="ranking-table">
-                  <thead>
-                    <tr>
-                      <th>{t.ranking.matchNumber}</th>
-                      <th>{t.matches.versus}</th>
-                      <th>{t.ranking.matchPoints}</th>
-                      <th>{t.ranking.total}</th>
-                      <th>{t.ranking.positionAfterMatch}</th>
-                      <th>{t.ranking.change}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {group.matches.map((item) => (
-                      <tr key={item.match.id}>
-                        <td>{item.match.match_number}</td>
-                        <td>
-                          {matchTitle(
-                            item.match.match_number,
-                            item.match.home_team_name,
-                            item.match.away_team_name,
-                            t.matches.match,
-                            t.matches.fallbackTeam,
-                            t.matches.versus,
-                          )}
-                        </td>
-                        <td>{item.entry.matchPoints}</td>
-                        <td>{item.entry.cumulativePoints}</td>
-                        <td>#{item.entry.rank}</td>
-                        <td>{rankDelta(item.entry.rankDelta)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </details>
-          ))}
-        </div>
-      ) : (
-        <div className="empty">{t.ranking.noData}</div>
-      )}
-    </section>
   );
 
   return (
@@ -238,14 +206,20 @@ export default async function PlayerDetailPage({ params }: PlayerDetailPageProps
         </div>
       </section>
 
-      <PlayerDetailTabs
+      <PlayerDetailContent
         rankingEvolutionLabel={t.ranking.rankingEvolution}
         pointsByGameLabel={t.ranking.pointsByGame}
         byMatchLabel={t.ranking.byMatch}
         byDayLabel={t.ranking.byDay}
         byMatchChart={byMatchChart}
         byDayChart={byDayChart}
-        pointsByGame={pointsByGame}
+        matchCards={matchCards}
+        showAllLabel={t.ranking.showAll}
+        showLessLabel={t.ranking.showLess}
+        noDataLabel={t.ranking.noData}
+        matchTitle={(mn, h, a) =>
+          matchTitle(mn, h, a, t.matches.match, t.matches.fallbackTeam, t.matches.versus)
+        }
       />
     </main>
   );
