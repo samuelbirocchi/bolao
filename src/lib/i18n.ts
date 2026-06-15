@@ -205,6 +205,7 @@ export const dictionaries = {
       climb: "Biggest climb",
       exactTag: "exact",
       noData: "No completed matches yet. Come back after the first results are in.",
+      lastUpdated: "Last updated",
     },
     adminMatches: {
       title: "Matches",
@@ -487,6 +488,7 @@ export const dictionaries = {
       climb: "Maior subida",
       exactTag: "exato",
       noData: "Nenhum jogo concluído ainda. Volte após os primeiros resultados.",
+      lastUpdated: "Última atualização",
     },
     adminMatches: {
       title: "Jogos",
@@ -771,6 +773,7 @@ export const dictionaries = {
       climb: "Mayor subida",
       exactTag: "exacto",
       noData: "Aún no hay partidos completados. Vuelve tras los primeros resultados.",
+      lastUpdated: "Última actualización",
     },
     adminMatches: {
       title: "Partidos",

@@ -87,6 +87,7 @@ export type MatchRankingData = {
   scores: MatchRankingRow[];
   members: LeaderboardEntry[];
   matches: RankingMatchMeta[];
+  lastUpdatedAt: string | null;
 };
 
 export type ClosedMatchDetail = {
@@ -289,23 +290,29 @@ export async function getLeaderboard(groupId: string): Promise<LeaderboardEntry[
 
 export async function getMatchRankingData(groupId: string): Promise<MatchRankingData> {
   if (!hasSupabaseEnv()) {
-    return { scores: [], members: [], matches: [] };
+    return { scores: [], members: [], matches: [], lastUpdatedAt: null };
   }
 
   const supabase = await createClient();
-  const [{ data: scores }, members, { data: matches }, { data: results }] = await Promise.all([
-    supabase
-      .from("match_prediction_scores")
-      .select("user_id, match_id, base_points, bonus_points, exact_score, correct_winner, correct_draw")
-      .eq("group_id", groupId),
-    getLeaderboard(groupId),
-    supabase
-      .from("matches")
-      .select("id, match_number, kickoff_utc, phase, home_team_name, away_team_name, status")
-      .order("kickoff_utc", { ascending: true })
-      .order("match_number", { ascending: true }),
-    supabase.from("match_results").select("match_id"),
-  ]);
+  const [{ data: scores }, members, { data: matches }, { data: results }, { data: settings }] =
+    await Promise.all([
+      supabase
+        .from("match_prediction_scores")
+        .select("user_id, match_id, base_points, bonus_points, exact_score, correct_winner, correct_draw")
+        .eq("group_id", groupId),
+      getLeaderboard(groupId),
+      supabase
+        .from("matches")
+        .select("id, match_number, kickoff_utc, phase, home_team_name, away_team_name, status")
+        .order("kickoff_utc", { ascending: true })
+        .order("match_number", { ascending: true }),
+      supabase.from("match_results").select("match_id, updated_at"),
+      supabase
+        .from("scoring_settings")
+        .select("updated_at")
+        .eq("id", true)
+        .single(),
+    ]);
 
   // Only completed matches (those with a result) belong on the timeline. Derive
   // the set from match_results so a completed match with zero predictions still
@@ -313,38 +320,22 @@ export async function getMatchRankingData(groupId: string): Promise<MatchRanking
   const completedMatchIds = new Set((results ?? []).map((row) => row.match_id));
   const completedMatches = (matches ?? []).filter((match) => completedMatchIds.has(match.id));
 
+  const resultTimestamps = (results ?? [])
+    .map((row) => row.updated_at as string)
+    .filter(Boolean);
+  const settingsTimestamp = settings?.updated_at as string | undefined;
+  const allTimestamps = [...resultTimestamps, settingsTimestamp].filter(Boolean) as string[];
+  const lastUpdatedAt =
+    allTimestamps.length > 0
+      ? allTimestamps.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0]
+      : null;
+
   return {
     scores: (scores ?? []) as MatchRankingRow[],
     members,
     matches: completedMatches as RankingMatchMeta[],
+    lastUpdatedAt,
   };
-}
-
-export async function getLastRankingUpdate(groupId: string): Promise<string | null> {
-  if (!hasSupabaseEnv()) {
-    return null;
-  }
-
-  const supabase = await createClient();
-  const { data: scored } = await supabase
-    .from("match_prediction_scores")
-    .select("match_id")
-    .eq("group_id", groupId);
-
-  const matchIds = Array.from(new Set((scored ?? []).map((row) => row.match_id)));
-  if (matchIds.length === 0) {
-    return null;
-  }
-
-  const { data } = await supabase
-    .from("match_results")
-    .select("updated_at")
-    .in("match_id", matchIds)
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  return data?.updated_at ?? null;
 }
 
 export async function getScoringSettings() {

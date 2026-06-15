@@ -6,7 +6,6 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { requireUser } from "@/lib/auth";
 import {
   getGroupDetail,
-  getLastRankingUpdate,
   getLeaderboard,
   getMatchRankingData,
   getScoringSettings,
@@ -43,11 +42,10 @@ function formatLastUpdated(iso: string, locale: Locale) {
 export default async function LeaderboardPage({ params }: LeaderboardPageProps) {
   const { user } = await requireUser();
   const { groupId } = await params;
-  const [group, entries, rankingData, lastUpdated, scoring, locale, t] = await Promise.all([
+  const [group, entries, rankingData, scoring, locale, t] = await Promise.all([
     getGroupDetail(groupId, user.id),
     getLeaderboard(groupId),
     getMatchRankingData(groupId),
-    getLastRankingUpdate(groupId),
     getScoringSettings(),
     getLocale(),
     getDictionary(),
@@ -158,9 +156,9 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
           .replace("{goalDifference}", String(scoring.goalDifferenceBonusPoints))}
       </div>
 
-      {lastUpdated ? (
+      {rankingData.lastUpdatedAt ? (
         <p className="muted" style={{ marginBottom: "1rem" }}>
-          {t.leaderboard.lastUpdated.replace("{datetime}", formatLastUpdated(lastUpdated, locale))}
+          {t.leaderboard.lastUpdated.replace("{datetime}", formatLastUpdated(rankingData.lastUpdatedAt, locale))}
         </p>
       ) : null}
 
