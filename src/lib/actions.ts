@@ -507,7 +507,8 @@ export async function syncOddsAction() {
     throw new Error(matchError?.message ?? "Could not load matches for odds sync.");
   }
 
-  const snapshots = buildOddsSnapshots(matches, oddsEvents).map((snapshot) => ({
+  const result = buildOddsSnapshots(matches, oddsEvents);
+  const rows = result.snapshots.map((snapshot) => ({
     match_id: snapshot.matchId,
     odds_event_id: snapshot.oddsEventId,
     source: snapshot.source,
@@ -518,10 +519,10 @@ export async function syncOddsAction() {
     captured_at: snapshot.capturedAt,
   }));
 
-  if (snapshots.length > 0) {
+  if (rows.length > 0) {
     const { error } = await supabase
       .from("match_odds_snapshots")
-      .upsert(snapshots, { onConflict: "match_id" });
+      .upsert(rows, { onConflict: "match_id" });
 
     if (error) {
       throw new Error(error.message);

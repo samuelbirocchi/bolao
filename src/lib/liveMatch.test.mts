@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { buildLiveMatchView } from "./liveMatch.ts";
 import type { RankingMatch, RankingMember, RankingScore } from "./ranking.ts";
-import { defaultScoreWeights } from "./scoring.ts";
+import { calculateBasePoints, defaultScoreWeights } from "./scoring.ts";
 
 const alice: RankingMember = {
   user_id: "alice",
@@ -49,6 +49,7 @@ function score(
     bonus_points: bonus,
     exact_score: exact,
     correct_winner: winner,
+    correct_draw: false,
   };
 }
 
@@ -80,8 +81,11 @@ test("buildLiveMatchView scores closed-match picks and rank movement against pre
   assert.equal(view.hasOfficialScore, true);
 
   const bobEntry = view.participants.find((participant) => participant.userId === "bob")!;
-  assert.equal(bobEntry.points, defaultScoreWeights.exactScoreBonusPoints);
-  assert.deepEqual(bobEntry.criteria, ["exactScore"]);
+  assert.equal(
+    bobEntry.points,
+    calculateBasePoints(0.3, defaultScoreWeights) + defaultScoreWeights.exactScoreBonusPoints,
+  );
+  assert.deepEqual(bobEntry.criteria, ["correctDraw", "exactScore"]);
   assert.equal(bobEntry.preMatchRank, 2);
   assert.equal(bobEntry.liveRank, 1);
   assert.equal(bobEntry.rankDelta, 1);
@@ -93,7 +97,7 @@ test("buildLiveMatchView scores closed-match picks and rank movement against pre
 
   const aliceEntry = view.participants.find((participant) => participant.userId === "alice")!;
   assert.equal(aliceEntry.points, 0);
-  assert.equal(aliceEntry.rankDelta, -1);
+  assert.equal(aliceEntry.rankDelta, 0); // tied with bob after m2, no rank change
 });
 
 test("buildLiveMatchView opens the closed-match view before the first official score", () => {

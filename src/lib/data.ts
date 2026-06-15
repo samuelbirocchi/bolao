@@ -70,6 +70,7 @@ export type MatchRankingRow = {
   bonus_points: number;
   exact_score: boolean;
   correct_winner: boolean;
+  correct_draw: boolean;
 };
 
 export type RankingMatchMeta = {

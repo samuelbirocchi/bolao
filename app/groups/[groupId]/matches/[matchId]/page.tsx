@@ -44,6 +44,7 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
   );
   const criteriaLabels: Record<LiveMatchCriterion, string> = {
     correctWinner: t.matches.correctWinner,
+    correctDraw: t.matches.correctDraw,
     winnerGoals: t.matches.winnerGoals,
     goalDifference: t.matches.goalDifference,
     loserGoals: t.matches.loserGoals,

@@ -23,6 +23,7 @@ export type LiveMatchPredictionInput = {
 
 export type LiveMatchCriterion =
   | "correctWinner"
+  | "correctDraw"
   | "winnerGoals"
   | "goalDifference"
   | "loserGoals"
@@ -63,6 +64,7 @@ function pickOutcome(prediction: ScoreLine): keyof MatchPickDistribution {
 function scoreCriteria(score: PredictionScore): LiveMatchCriterion[] {
   const criteria: LiveMatchCriterion[] = [];
   if (score.correctWinner) criteria.push("correctWinner");
+  if (score.correctDraw) criteria.push("correctDraw");
   if (score.winnerGoals) criteria.push("winnerGoals");
   if (score.goalDifference) criteria.push("goalDifference");
   if (score.loserGoals) criteria.push("loserGoals");
@@ -123,6 +125,7 @@ export function buildLiveMatchView({
           bonus_points: score.bonusPoints,
           exact_score: score.exactScore,
           correct_winner: score.correctWinner,
+          correct_draw: score.correctDraw,
         };
       })
     : [];
