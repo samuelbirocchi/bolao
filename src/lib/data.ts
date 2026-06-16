@@ -296,7 +296,7 @@ export async function getMatchRankingData(groupId: string): Promise<MatchRanking
   const [{ data: scores }, members, { data: matches }, { data: results }] = await Promise.all([
     supabase
       .from("match_prediction_scores")
-      .select("user_id, match_id, base_points, bonus_points, exact_score, correct_winner")
+      .select("user_id, match_id, base_points, bonus_points, exact_score, correct_winner, correct_draw")
       .eq("group_id", groupId),
     getLeaderboard(groupId),
     supabase
@@ -318,6 +318,33 @@ export async function getMatchRankingData(groupId: string): Promise<MatchRanking
     members,
     matches: completedMatches as RankingMatchMeta[],
   };
+}
+
+export async function getLastRankingUpdate(groupId: string): Promise<string | null> {
+  if (!hasSupabaseEnv()) {
+    return null;
+  }
+
+  const supabase = await createClient();
+  const { data: scored } = await supabase
+    .from("match_prediction_scores")
+    .select("match_id")
+    .eq("group_id", groupId);
+
+  const matchIds = Array.from(new Set((scored ?? []).map((row) => row.match_id)));
+  if (matchIds.length === 0) {
+    return null;
+  }
+
+  const { data } = await supabase
+    .from("match_results")
+    .select("updated_at")
+    .in("match_id", matchIds)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return data?.updated_at ?? null;
 }
 
 export async function getScoringSettings() {
@@ -413,7 +440,7 @@ export async function getClosedMatchDetail(
     supabase.from("match_results").select("match_id"),
     supabase
       .from("match_prediction_scores")
-      .select("user_id, match_id, base_points, bonus_points, exact_score, correct_winner")
+      .select("user_id, match_id, base_points, bonus_points, exact_score, correct_winner, correct_draw")
       .eq("group_id", groupId),
     getScoringSettings(),
   ]);
