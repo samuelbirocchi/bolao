@@ -2,6 +2,10 @@ export type MatchKickoff = {
   kickoff_utc: string;
 };
 
+export function isMatchLocked(kickoffUtc: string, now: number): boolean {
+  return new Date(kickoffUtc).getTime() <= now;
+}
+
 export function splitMatchesByKickoff<TMatch extends MatchKickoff>(
   matches: TMatch[],
   now: number,
@@ -10,7 +14,7 @@ export function splitMatchesByKickoff<TMatch extends MatchKickoff>(
   const upcomingMatches: TMatch[] = [];
 
   for (const match of matches) {
-    if (new Date(match.kickoff_utc).getTime() <= now) {
+    if (isMatchLocked(match.kickoff_utc, now)) {
       pastMatches.push(match);
     } else {
       upcomingMatches.push(match);

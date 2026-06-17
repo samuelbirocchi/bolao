@@ -3,8 +3,22 @@ import { test } from "node:test";
 import {
   getLocalDateKey,
   groupUpcomingByDate,
+  isMatchLocked,
   splitMatchesByKickoff,
 } from "./matches.ts";
+
+test("isMatchLocked returns true once kickoff has passed and false for future matches", () => {
+  const now = new Date("2026-06-11T16:00:00.000Z").getTime();
+
+  assert.equal(isMatchLocked("2026-06-11T12:00:00.000Z", now), true);
+  assert.equal(isMatchLocked("2026-06-11T20:00:00.000Z", now), false);
+});
+
+test("isMatchLocked treats the exact kickoff moment as locked (boundary is inclusive)", () => {
+  const now = new Date("2026-06-11T16:00:00.000Z").getTime();
+
+  assert.equal(isMatchLocked("2026-06-11T16:00:00.000Z", now), true);
+});
 
 test("splitMatchesByKickoff groups started matches separately from upcoming matches", () => {
   const now = new Date("2026-06-11T16:00:00.000Z").getTime();
