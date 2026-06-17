@@ -1606,3 +1606,83 @@ label {
   color: var(--text);
   transform: none;
 }
+
+.podium-highlights {
+  display: grid;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.podium-band {
+  background: var(--panel);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(16px) saturate(1.18);
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.9rem;
+}
+
+.podium-band--top {
+  border-left: 4px solid var(--accent-strong);
+}
+
+.podium-band--bottom {
+  border-left: 4px solid var(--danger);
+}
+
+.podium-band-label {
+  color: var(--brand-strong);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.podium-band--bottom .podium-band-label {
+  color: var(--danger);
+}
+
+.podium-slots {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  overflow-x: auto;
+}
+
+.podium-slot {
+  align-items: center;
+  background: var(--panel-strong);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex: 1 1 9rem;
+  gap: 0.55rem;
+  min-width: 9rem;
+  padding: 0.55rem 0.7rem;
+}
+
+.podium-slot .rank {
+  flex-shrink: 0;
+  height: 1.85rem;
+  width: 1.85rem;
+}
+
+.podium-slot-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.podium-slot-points {
+  color: var(--brand-strong);
+  font-size: 1.2rem;
+  font-weight: 950;
+  letter-spacing: -0.05em;
+}
+
+@media (max-width: 640px) {
+  .podium-slots {
+    flex-wrap: nowrap;
+  }
+}
