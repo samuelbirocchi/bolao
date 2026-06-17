@@ -23,6 +23,18 @@ export type RankingScore = {
   exact_score: boolean;
   correct_winner: boolean;
   correct_draw: boolean;
+  // Enrichment fields (match_prediction_scores, migration 008). Optional so the
+  // live-match view can keep constructing scores without the per-match detail.
+  prediction_home_goals?: number | null;
+  prediction_away_goals?: number | null;
+  result_home_goals?: number | null;
+  result_away_goals?: number | null;
+  winner_goals_bonus?: boolean;
+  goal_difference_bonus?: boolean;
+  loser_goals_bonus?: boolean;
+  rout_bonus?: boolean;
+  extra_time_bonus?: boolean;
+  penalties_bonus?: boolean;
 };
 
 export type RankingMember = {
@@ -61,9 +73,20 @@ export type PerMatchEntry = {
   matchPoints: number;
   exact: boolean;
   correctWinner: boolean;
+  correctDraw: boolean;
   cumulativePoints: number;
   rank: number;
   rankDelta: number;
+  predictionHomeGoals: number | null;
+  predictionAwayGoals: number | null;
+  resultHomeGoals: number | null;
+  resultAwayGoals: number | null;
+  winnerGoals: boolean;
+  goalDifference: boolean;
+  loserGoals: boolean;
+  routBonus: boolean;
+  extraTime: boolean;
+  penalties: boolean;
 };
 
 export type PerMatchBreakdown = {
@@ -261,9 +284,20 @@ export function buildRanking(
         matchPoints: score ? score.base_points + score.bonus_points : 0,
         exact: score?.exact_score ?? false,
         correctWinner: score?.correct_winner ?? false,
+        correctDraw: score?.correct_draw ?? false,
         cumulativePoints: entry.cumulativePoints,
         rank: entry.rank,
         rankDelta: previousRank - entry.rank,
+        predictionHomeGoals: score?.prediction_home_goals ?? null,
+        predictionAwayGoals: score?.prediction_away_goals ?? null,
+        resultHomeGoals: score?.result_home_goals ?? null,
+        resultAwayGoals: score?.result_away_goals ?? null,
+        winnerGoals: score?.winner_goals_bonus ?? false,
+        goalDifference: score?.goal_difference_bonus ?? false,
+        loserGoals: score?.loser_goals_bonus ?? false,
+        routBonus: score?.rout_bonus ?? false,
+        extraTime: score?.extra_time_bonus ?? false,
+        penalties: score?.penalties_bonus ?? false,
       };
     });
     return { match: step.match, entries };

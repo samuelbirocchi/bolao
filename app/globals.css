@@ -1408,7 +1408,18 @@ label {
 }
 
 .player-points-scroll .ranking-table {
-  min-width: 320px;
+  min-width: 540px;
+}
+
+.player-points-match {
+  display: block;
+}
+
+.player-points-result {
+  color: var(--muted);
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .perf-detail {

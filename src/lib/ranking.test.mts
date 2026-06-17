@@ -320,3 +320,119 @@ test("correct-draw score credits cumulative points and winner count once the vie
   assert.equal(bobStanding.cumulativePoints, 0);
   assert.equal(bobStanding.winnerCount, 0);
 });
+
+function aliceEntry(score: RankingScore) {
+  const { perMatch } = buildRanking([m1], [score], [alice, bob]);
+  const breakdown = perMatch.find((entry) => entry.match.id === "m1")!;
+  return breakdown.entries.find((entry) => entry.userId === "alice")!;
+}
+
+test("perMatch threads scorelines and exact flag for an exact-score row", () => {
+  // Exact score does not stack with winner-goals/goal-diff/loser-goals, so those
+  // bonus flags stay false even though the winner is correct.
+  const exactScore: RankingScore = {
+    user_id: "alice",
+    match_id: "m1",
+    base_points: 10,
+    bonus_points: 3,
+    exact_score: true,
+    correct_winner: true,
+    correct_draw: false,
+    prediction_home_goals: 2,
+    prediction_away_goals: 1,
+    result_home_goals: 2,
+    result_away_goals: 1,
+    winner_goals_bonus: false,
+    goal_difference_bonus: false,
+    loser_goals_bonus: false,
+    rout_bonus: false,
+    extra_time_bonus: false,
+    penalties_bonus: false,
+  };
+  const entry = aliceEntry(exactScore);
+
+  assert.equal(entry.exact, true);
+  assert.equal(entry.correctWinner, true);
+  assert.equal(entry.predictionHomeGoals, 2);
+  assert.equal(entry.predictionAwayGoals, 1);
+  assert.equal(entry.resultHomeGoals, 2);
+  assert.equal(entry.resultAwayGoals, 1);
+  assert.equal(entry.winnerGoals, false);
+  assert.equal(entry.goalDifference, false);
+});
+
+test("perMatch defaults scorelines to null and flags to false when no score row", () => {
+  // bob has no score row for m1; the per-match entry must carry null/false.
+  const { perMatch } = buildRanking([m1], [], [alice, bob]);
+  const breakdown = perMatch.find((entry) => entry.match.id === "m1")!;
+  const bobEntry = breakdown.entries.find((entry) => entry.userId === "bob")!;
+
+  assert.equal(bobEntry.predictionHomeGoals, null);
+  assert.equal(bobEntry.predictionAwayGoals, null);
+  assert.equal(bobEntry.resultHomeGoals, null);
+  assert.equal(bobEntry.resultAwayGoals, null);
+  assert.equal(bobEntry.exact, false);
+  assert.equal(bobEntry.correctWinner, false);
+  assert.equal(bobEntry.correctDraw, false);
+  assert.equal(bobEntry.winnerGoals, false);
+  assert.equal(bobEntry.goalDifference, false);
+  assert.equal(bobEntry.loserGoals, false);
+  assert.equal(bobEntry.routBonus, false);
+  assert.equal(bobEntry.extraTime, false);
+  assert.equal(bobEntry.penalties, false);
+});
+
+test("perMatch threads correct_winner + winner_goals_bonus", () => {
+  const winnerGoalsScore: RankingScore = {
+    user_id: "alice",
+    match_id: "m1",
+    base_points: 8,
+    bonus_points: 2,
+    exact_score: false,
+    correct_winner: true,
+    correct_draw: false,
+    prediction_home_goals: 3,
+    prediction_away_goals: 1,
+    result_home_goals: 3,
+    result_away_goals: 0,
+    winner_goals_bonus: true,
+    goal_difference_bonus: false,
+    loser_goals_bonus: false,
+    rout_bonus: false,
+    extra_time_bonus: false,
+    penalties_bonus: false,
+  };
+  const entry = aliceEntry(winnerGoalsScore);
+
+  assert.equal(entry.correctWinner, true);
+  assert.equal(entry.winnerGoals, true);
+  assert.equal(entry.exact, false);
+});
+
+test("perMatch threads correct_draw + goal_difference_bonus (no winner)", () => {
+  const drawGoalDiffScore: RankingScore = {
+    user_id: "alice",
+    match_id: "m1",
+    base_points: 12,
+    bonus_points: 2,
+    exact_score: false,
+    correct_winner: false,
+    correct_draw: true,
+    prediction_home_goals: 1,
+    prediction_away_goals: 1,
+    result_home_goals: 2,
+    result_away_goals: 2,
+    winner_goals_bonus: false,
+    goal_difference_bonus: true,
+    loser_goals_bonus: false,
+    rout_bonus: false,
+    extra_time_bonus: false,
+    penalties_bonus: false,
+  };
+  const entry = aliceEntry(drawGoalDiffScore);
+
+  assert.equal(entry.correctDraw, true);
+  assert.equal(entry.correctWinner, false);
+  assert.equal(entry.goalDifference, true);
+  assert.equal(entry.winnerGoals, false);
+});

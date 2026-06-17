@@ -71,6 +71,16 @@ export type MatchRankingRow = {
   exact_score: boolean;
   correct_winner: boolean;
   correct_draw: boolean;
+  prediction_home_goals: number | null;
+  prediction_away_goals: number | null;
+  result_home_goals: number | null;
+  result_away_goals: number | null;
+  winner_goals_bonus: boolean;
+  goal_difference_bonus: boolean;
+  loser_goals_bonus: boolean;
+  rout_bonus: boolean;
+  extra_time_bonus: boolean;
+  penalties_bonus: boolean;
 };
 
 export type RankingMatchMeta = {
@@ -311,7 +321,9 @@ export async function getMatchRankingData(groupId: string): Promise<MatchRanking
   const [{ data: scores }, members, { data: matches }, { data: results }] = await Promise.all([
     supabase
       .from("match_prediction_scores")
-      .select("user_id, match_id, base_points, bonus_points, exact_score, correct_winner, correct_draw")
+      .select(
+        "user_id, match_id, base_points, bonus_points, exact_score, correct_winner, correct_draw, prediction_home_goals, prediction_away_goals, result_home_goals, result_away_goals, winner_goals_bonus, goal_difference_bonus, loser_goals_bonus, rout_bonus, extra_time_bonus, penalties_bonus",
+      )
       .eq("group_id", groupId),
     getLeaderboard(groupId),
     supabase
