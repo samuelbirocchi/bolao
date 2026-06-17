@@ -12,6 +12,7 @@ import {
 import { avatarObjectPath, avatarStoragePathFromPublicUrl, validateAvatarUrl } from "@/lib/avatar";
 import { LOCALE_COOKIE, isLocale } from "@/lib/i18n";
 import { redeemInviteCode } from "@/lib/invites";
+import { assertNotOwner } from "@/lib/membership";
 import { buildOddsSnapshots, fetchWorldCupOdds } from "@/lib/odds";
 import { buildPredictionEntries } from "@/lib/predictions";
 import { pathWithSaveFeedback } from "@/lib/saveFeedback";
@@ -482,6 +483,50 @@ export async function updateMatchResultAction(formData: FormData) {
   }
 
   revalidatePath("/admin/matches");
+  revalidatePath("/groups", "layout");
+}
+
+export async function removeUserFromGroupAction(formData: FormData) {
+  requireSupabaseConfig();
+  await requireGlobalAdmin();
+  const groupId = readString(formData, "groupId");
+  const userId = readString(formData, "userId");
+
+  if (!groupId || !userId) {
+    throw new Error("groupId and userId are required.");
+  }
+
+  const supabase = await createClient();
+  const { data: membership, error: membershipError } = await supabase
+    .from("group_memberships")
+    .select("role")
+    .eq("group_id", groupId)
+    .eq("user_id", userId)
+    .single();
+
+  if (membershipError || !membership) {
+    throw new Error(membershipError?.message ?? "Membership not found.");
+  }
+
+  assertNotOwner(membership.role);
+
+  const { data: deleted, error: deleteError } = await supabase
+    .from("group_memberships")
+    .delete()
+    .eq("group_id", groupId)
+    .eq("user_id", userId)
+    .select("user_id");
+
+  if (deleteError) {
+    throw new Error(deleteError.message);
+  }
+
+  if (!deleted || deleted.length === 0) {
+    throw new Error("Could not remove the member. The removal may have been blocked.");
+  }
+
+  revalidatePath("/admin/groups");
+  revalidatePath(`/admin/groups/${groupId}`);
   revalidatePath("/groups", "layout");
 }
 
