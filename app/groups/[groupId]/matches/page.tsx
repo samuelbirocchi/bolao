@@ -8,12 +8,12 @@ import { getGroupDetail, getMatchesWithPredictions, getScoringSettings } from "@
 import { displayName } from "@/lib/format";
 import { getDictionary, getLocale } from "@/lib/i18n/server";
 import { hasSaveFeedback } from "@/lib/saveFeedback";
-import { splitMatchesByKickoff } from "@/lib/matches";
+import { splitMatchesByKickoff, getUniqueMatchDates, filterMatchesByDate, getMatchDateKey, formatMatchDateKey } from "@/lib/matches";
 import { calculateBasePoints, type ScoreWeights } from "@/lib/scoring";
 
 type MatchesPageProps = {
   params: Promise<{ groupId: string }>;
-  searchParams: Promise<{ saved?: string }>;
+  searchParams: Promise<{ saved?: string; date?: string }>;
 };
 
 function formatProbability(value: number | null) {
@@ -104,10 +104,15 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
   }
 
   const now = Date.now();
-  const unlockedMatchIds = matches
+  const { pastMatches, upcomingMatches } = splitMatchesByKickoff(matches, now);
+
+  const upcomingDates = getUniqueMatchDates(upcomingMatches);
+  const todayKey = getMatchDateKey(new Date(now).toISOString());
+  const selectedDate = queryParams.date && upcomingDates.includes(queryParams.date) ? queryParams.date : null;
+  const visibleUpcoming = selectedDate ? filterMatchesByDate(upcomingMatches, selectedDate) : upcomingMatches;
+  const unlockedMatchIds = visibleUpcoming
     .filter((match) => new Date(match.kickoff_utc).getTime() > now)
     .map((match) => match.id);
-  const { pastMatches, upcomingMatches } = splitMatchesByKickoff(matches, now);
 
   const renderMatchCard = (match: (typeof matches)[number]) => {
     const locked = new Date(match.kickoff_utc).getTime() <= now;
@@ -368,6 +373,29 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
           <input name="groupId" type="hidden" value={group.id} />
           <input name="matchIds" type="hidden" value={unlockedMatchIds.join(",")} />
 
+          {upcomingDates.length > 0 ? (
+            <nav className="calendar-nav" aria-label={t.matches.calendarNav}>
+              <Link
+                className={selectedDate ? "" : "active"}
+                href={`/groups/${group.id}/matches`}
+              >
+                {t.matches.allDates}
+              </Link>
+              {upcomingDates.map((dateKey) => (
+                <Link
+                  className={[
+                    dateKey === todayKey ? "today" : "",
+                    dateKey === selectedDate ? "active" : "",
+                  ].filter(Boolean).join(" ")}
+                  href={`/groups/${group.id}/matches?date=${dateKey}`}
+                  key={dateKey}
+                >
+                  {formatMatchDateKey(dateKey, locale)}
+                </Link>
+              ))}
+            </nav>
+          ) : null}
+
           <section className="match-list">
             {pastMatches.length > 0 ? (
               <details className="past-matches">
@@ -377,7 +405,7 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
                 <div className="past-matches-list">{pastMatches.map(renderMatchCard)}</div>
               </details>
             ) : null}
-            {upcomingMatches.map(renderMatchCard)}
+            {visibleUpcoming.map(renderMatchCard)}
           </section>
 
           <div className="match-form-actions">

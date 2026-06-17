@@ -634,6 +634,41 @@ label {
   color: var(--text);
 }
 
+.calendar-nav {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0 0 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+}
+
+.calendar-nav a {
+  background: rgba(255, 255, 255, 0.48);
+  border: 1px solid rgba(255, 255, 255, 0.64);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 0.45rem 0.7rem;
+  white-space: nowrap;
+}
+
+.calendar-nav a:hover {
+  background: var(--panel-solid);
+  color: var(--text);
+}
+
+.calendar-nav a.today {
+  border-color: var(--brand-strong);
+  color: var(--brand-strong);
+}
+
+.calendar-nav a.active {
+  background: var(--brand-strong);
+  border-color: var(--brand-strong);
+  color: #fff;
+}
+
 .match-list,
 .leaderboard {
   display: grid;

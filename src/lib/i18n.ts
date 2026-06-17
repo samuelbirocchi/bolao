@@ -162,6 +162,8 @@ export const dictionaries = {
       extraTime: "Extra time",
       penalties: "Penalties",
       complementaryInfo: "Complementary info",
+      calendarNav: "Filter by date",
+      allDates: "All",
     },
     leaderboard: {
       title: "Leaderboard",
@@ -444,6 +446,8 @@ export const dictionaries = {
       extraTime: "Prorrogação",
       penalties: "Pênaltis",
       complementaryInfo: "Informações complementares",
+      calendarNav: "Filtrar por data",
+      allDates: "Tudo",
     },
     leaderboard: {
       title: "Classificação",
@@ -728,6 +732,8 @@ export const dictionaries = {
       extraTime: "Prórroga",
       penalties: "Penales",
       complementaryInfo: "Información complementaria",
+      calendarNav: "Filtrar por fecha",
+      allDates: "Todo",
     },
     leaderboard: {
       title: "Clasificación",
