@@ -23,6 +23,11 @@ test("probability base score is linear, rounded, and clamped", () => {
   );
 });
 
+test("draw base score uses draw probability and falls back to minimum", () => {
+  assert.equal(calculateBasePoints(0.3, defaultScoreWeights), 17);
+  assert.equal(calculateBasePoints(null, defaultScoreWeights), defaultScoreWeights.baseMinPoints);
+});
+
 test("exact score blocks winner goals, goal difference, and loser goals bonuses", () => {
   const score = calculatePredictionScore(
     { homeGoals: 2, awayGoals: 1 },
