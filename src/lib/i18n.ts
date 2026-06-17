@@ -106,6 +106,8 @@ export const dictionaries = {
       signInPrompt: "Sign in with your password or request a setup link to join this World Cup pool.",
     },
     matches: {
+      dateBarAriaLabel: "Filter upcoming matches by date",
+      today: "Today",
       empty: "No matches are loaded yet. Ask a global admin to sync or add them.",
       match: "Match",
       versus: "vs",
@@ -388,6 +390,8 @@ export const dictionaries = {
       signInPrompt: "Entre com sua senha ou solicite um link de configuração para participar deste bolão da Copa.",
     },
     matches: {
+      dateBarAriaLabel: "Filtrar próximos jogos por data",
+      today: "Hoje",
       empty: "Nenhum jogo foi carregado ainda. Peça para um administrador global sincronizar ou adicionar jogos.",
       match: "Jogo",
       versus: "x",
@@ -672,6 +676,8 @@ export const dictionaries = {
         "Inicia sesión con tu contraseña o solicita un enlace de configuración para unirte a esta quiniela del Mundial.",
     },
     matches: {
+      dateBarAriaLabel: "Filtrar próximos partidos por fecha",
+      today: "Hoy",
       empty: "Aún no hay partidos cargados. Pide a un administrador global que los sincronice o agregue.",
       match: "Partido",
       versus: "vs",
