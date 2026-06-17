@@ -8,7 +8,7 @@ import { getGroupDetail, getMatchesWithPredictions, getScoringSettings } from "@
 import { displayName } from "@/lib/format";
 import { getDictionary, getLocale } from "@/lib/i18n/server";
 import { hasSaveFeedback } from "@/lib/saveFeedback";
-import { splitMatchesByKickoff } from "@/lib/matches";
+import { isMatchLocked, splitMatchesByKickoff } from "@/lib/matches";
 import { calculateBasePoints, type ScoreWeights } from "@/lib/scoring";
 
 type MatchesPageProps = {
@@ -105,12 +105,12 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
 
   const now = Date.now();
   const unlockedMatchIds = matches
-    .filter((match) => new Date(match.kickoff_utc).getTime() > now)
+    .filter((match) => !isMatchLocked(match.kickoff_utc, now))
     .map((match) => match.id);
   const { pastMatches, upcomingMatches } = splitMatchesByKickoff(matches, now);
 
   const renderMatchCard = (match: (typeof matches)[number]) => {
-    const locked = new Date(match.kickoff_utc).getTime() <= now;
+    const locked = isMatchLocked(match.kickoff_utc, now);
     const homeName = displayName(
       match.home_team_name,
       match.home_team_placeholder ?? t.matches.fallbackTeam,
@@ -158,7 +158,9 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
 
     return (
       <article
-        className={locked ? "match-card match-card-clickable" : "match-card"}
+        className={
+          locked ? "match-card match-card-clickable match-card-past" : "match-card"
+        }
         key={match.id}
       >
         {locked ? (
