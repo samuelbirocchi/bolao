@@ -119,12 +119,37 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
           matchPoints: entry.matchPoints,
           rank: entry.rank,
           rankDelta: entry.rankDelta,
+          predictionHomeGoals: entry.predictionHomeGoals,
+          predictionAwayGoals: entry.predictionAwayGoals,
+          resultHomeGoals: entry.resultHomeGoals,
+          resultAwayGoals: entry.resultAwayGoals,
+          exact: entry.exact,
+          correctWinner: entry.correctWinner,
+          correctDraw: entry.correctDraw,
+          winnerGoals: entry.winnerGoals,
+          goalDifference: entry.goalDifference,
+          loserGoals: entry.loserGoals,
+          routBonus: entry.routBonus,
+          extraTime: entry.extraTime,
+          penalties: entry.penalties,
         };
       })
       .filter((row): row is PlayerMatchEntry => row !== null);
 
   const perfFor = (userId: string) =>
     model.performance.find((stat) => stat.userId === userId) ?? null;
+
+  const criteriaLabels = {
+    correctWinner: t.matches.correctWinner,
+    correctDraw: t.matches.correctDraw,
+    winnerGoals: t.matches.winnerGoals,
+    goalDifference: t.matches.goalDifference,
+    loserGoals: t.matches.loserGoals,
+    exactScore: t.matches.exactScore,
+    rout: t.matches.rout,
+    extraTime: t.matches.extraTime,
+    penalties: t.matches.penalties,
+  } as const;
 
   // Competition ranking: entries with the same total_points share the same rank,
   // and the next rank skips accordingly (1, 1, 3 not 1, 1, 2).
@@ -242,6 +267,11 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
                     tablePointsHeader={t.ranking.points}
                     tableRankHeader={t.ranking.rankAfterMatch}
                     tableChangeHeader={t.ranking.change}
+                    tablePredictionHeader={t.ranking.prediction}
+                    tableCriteriaHeader={t.ranking.criteria}
+                    criteriaLabels={criteriaLabels}
+                    versusLabel={t.matches.versus}
+                    noCriteriaLabel={t.ranking.noCriteria}
                   />
                 </details>
               </article>

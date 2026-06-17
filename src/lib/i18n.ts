@@ -204,6 +204,9 @@ export const dictionaries = {
       bestRank: "Best rank",
       climb: "Biggest climb",
       exactTag: "exact",
+      prediction: "Pick",
+      criteria: "Criteria",
+      noCriteria: "–",
       noData: "No completed matches yet. Come back after the first results are in.",
     },
     adminMatches: {
@@ -486,6 +489,9 @@ export const dictionaries = {
       bestRank: "Melhor posição",
       climb: "Maior subida",
       exactTag: "exato",
+      prediction: "Palpite",
+      criteria: "Critério",
+      noCriteria: "–",
       noData: "Nenhum jogo concluído ainda. Volte após os primeiros resultados.",
     },
     adminMatches: {
@@ -770,6 +776,9 @@ export const dictionaries = {
       bestRank: "Mejor posición",
       climb: "Mayor subida",
       exactTag: "exacto",
+      prediction: "Pronóstico",
+      criteria: "Criterio",
+      noCriteria: "–",
       noData: "Aún no hay partidos completados. Vuelve tras los primeros resultados.",
     },
     adminMatches: {
