@@ -135,6 +135,13 @@ export const dictionaries = {
           "A correct {team} win is {points} pts because its win odds are {probability}. Base points scale from {maxPoints} pts at {floor} or lower to {minPoints} pts at {ceiling} or higher, rounded.",
         fallbackTooltip:
           "A correct {team} win is {points} pts because no win odds were synced. Missing odds use the minimum base value of {minPoints} pts.",
+        drawPoints: {
+          points: "Draw: {points} pts",
+          tooltip:
+            "A correct draw is {points} pts because its draw odds are {probability}. Base points scale from {maxPoints} pts at {floor} or lower to {minPoints} pts at {ceiling} or higher, rounded.",
+          fallbackTooltip:
+            "A correct draw is {points} pts because no draw odds were synced. Missing odds use the minimum base value of {minPoints} pts.",
+        },
       },
       savedNotice: "Predictions saved.",
       details: "Match details",
@@ -417,6 +424,13 @@ export const dictionaries = {
           "Uma vitória correta de {team} vale {points} pts porque a chance nas odds é {probability}. Os pontos-base vão de {maxPoints} pts em {floor} ou menos até {minPoints} pts em {ceiling} ou mais, com arredondamento.",
         fallbackTooltip:
           "Uma vitória correta de {team} vale {points} pts porque nenhuma odd foi sincronizada. Sem odds, vale a pontuação base mínima de {minPoints} pts.",
+        drawPoints: {
+          points: "Empate: {points} pts",
+          tooltip:
+            "Um empate correto vale {points} pts porque a chance de empate nas odds é {probability}. Os pontos-base vão de {maxPoints} pts em {floor} ou menos até {minPoints} pts em {ceiling} ou mais, com arredondamento.",
+          fallbackTooltip:
+            "Um empate correto vale {points} pts porque nenhuma odd foi sincronizada. Sem odds, vale a pontuação base mínima de {minPoints} pts.",
+        },
       },
       savedNotice: "Palpites salvos.",
       details: "Detalhes do jogo",
@@ -701,6 +715,13 @@ export const dictionaries = {
           "Una victoria correcta de {team} vale {points} pts porque su probabilidad en cuotas es {probability}. Los puntos base van de {maxPoints} pts con {floor} o menos a {minPoints} pts con {ceiling} o más, redondeados.",
         fallbackTooltip:
           "Una victoria correcta de {team} vale {points} pts porque no se sincronizaron cuotas. Sin cuotas se usa el valor base mínimo de {minPoints} pts.",
+        drawPoints: {
+          points: "Empate: {points} pts",
+          tooltip:
+            "Un empate correcto vale {points} pts porque su probabilidad de empate en cuotas es {probability}. Los puntos base van de {maxPoints} pts con {floor} o menos a {minPoints} pts con {ceiling} o más, redondeados.",
+          fallbackTooltip:
+            "Un empate correcto vale {points} pts porque no se sincronizaron cuotas. Sin cuotas se usa el valor base mínimo de {minPoints} pts.",
+        },
       },
       savedNotice: "Predicciones guardadas.",
       details: "Detalles del partido",

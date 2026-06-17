@@ -22,7 +22,7 @@ All mutations live in `src/lib/actions.ts` with the `*Action` suffix. Every acti
 
 - Base score (5–20) comes from the frozen pre-kickoff win probability. Missing odds → minimum base score.
 - Exact-score bonus does **NOT** stack with winner-goals, goal-difference, or loser-goals bonuses. It still stacks with rout and extra-time/penalty bonuses.
-- Draw predictions cannot earn base or extra-time points (no winner picked).
+- Draw predictions earn base points from the frozen draw probability (migration 006). A correct draw can also earn the goal-difference and extra-time/penalty bonuses, but not the winner-goals, loser-goals, or rout bonuses (no winner picked).
 
 ## Odds
 

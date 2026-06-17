@@ -761,6 +761,11 @@ label {
   text-align: center;
 }
 
+.prediction-draw-points {
+  grid-column: 1 / -1;
+  justify-self: center;
+}
+
 .prediction-stats-details {
   position: relative;
   z-index: 3;

@@ -155,6 +155,12 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
       scoring,
       t.matches.victoryPoints,
     );
+    const drawVictoryPoints = buildVictoryPointCopy(
+      t.matches.draw,
+      match.odds_draw_probability,
+      scoring,
+      t.matches.victoryPoints.drawPoints,
+    );
 
     return (
       <article
@@ -267,6 +273,26 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
             />
           </label>
           {locked ? <span className="muted">{t.matches.locked}</span> : null}
+          {!locked ? (
+            <span
+              aria-describedby={`${match.id}-draw-points-tooltip`}
+              className="prediction-points-help prediction-draw-points"
+              tabIndex={0}
+              title={drawVictoryPoints.tooltip}
+            >
+              <span className="prediction-points">{drawVictoryPoints.label}</span>
+              <span aria-hidden="true" className="prediction-points-icon">
+                ?
+              </span>
+              <span
+                className="prediction-points-tooltip"
+                id={`${match.id}-draw-points-tooltip`}
+                role="tooltip"
+              >
+                {drawVictoryPoints.tooltip}
+              </span>
+            </span>
+          ) : null}
         </div>
 
         {predictionStats ? (
