@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DateBar } from "@/components/DateBar";
 import { LocalKickoff } from "@/components/LocalKickoff";
 import { TeamName } from "@/components/TeamName";
 import { notFound } from "next/navigation";
@@ -8,7 +9,7 @@ import { getGroupDetail, getMatchesWithPredictions, getScoringSettings } from "@
 import { displayName } from "@/lib/format";
 import { getDictionary, getLocale } from "@/lib/i18n/server";
 import { hasSaveFeedback } from "@/lib/saveFeedback";
-import { splitMatchesByKickoff } from "@/lib/matches";
+import { getLocalDateKey, groupUpcomingByDate, splitMatchesByKickoff } from "@/lib/matches";
 import { calculateBasePoints, type ScoreWeights } from "@/lib/scoring";
 
 type MatchesPageProps = {
@@ -108,6 +109,10 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
     .filter((match) => new Date(match.kickoff_utc).getTime() > now)
     .map((match) => match.id);
   const { pastMatches, upcomingMatches } = splitMatchesByKickoff(matches, now);
+  // Server-UTC grouping for v1: pills are bucketed by UTC date, not the
+  // viewer's local timezone (see PR notes for the limitation).
+  const dateGroups = groupUpcomingByDate(upcomingMatches, "UTC", locale);
+  const todayKey = getLocalDateKey(new Date().toISOString(), "UTC");
 
   const renderMatchCard = (match: (typeof matches)[number]) => {
     const locked = new Date(match.kickoff_utc).getTime() <= now;
@@ -403,7 +408,22 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
                 <div className="past-matches-list">{pastMatches.map(renderMatchCard)}</div>
               </details>
             ) : null}
-            {upcomingMatches.map(renderMatchCard)}
+            {dateGroups.length > 1 ? (
+              <DateBar
+                ariaLabel={t.matches.dateBarAriaLabel}
+                groups={dateGroups.map(({ dateKey, label }) => ({ dateKey, label }))}
+                todayKey={todayKey}
+                todayLabel={t.matches.today}
+              >
+                {dateGroups.map((group) => (
+                  <div data-date-key={group.dateKey} key={group.dateKey}>
+                    {group.matches.map(renderMatchCard)}
+                  </div>
+                ))}
+              </DateBar>
+            ) : (
+              upcomingMatches.map(renderMatchCard)
+            )}
           </section>
 
           <div className="match-form-actions">

@@ -634,6 +634,40 @@ label {
   color: var(--text);
 }
 
+.date-bar {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0 0 0.8rem;
+  overflow-x: auto;
+  padding-bottom: 0.1rem;
+}
+
+.date-bar-pill {
+  background: rgba(255, 255, 255, 0.64);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 900;
+  padding: 0.5rem 0.85rem;
+  white-space: nowrap;
+}
+
+.date-bar-pill:hover {
+  background: var(--panel-solid);
+  color: var(--text);
+}
+
+.date-bar-pill[data-today] {
+  box-shadow: var(--ring);
+}
+
+.date-bar-pill[aria-pressed="true"] {
+  background: var(--brand);
+  border-color: var(--brand-strong);
+  color: #fff;
+}
+
 .match-list,
 .leaderboard {
   display: grid;
