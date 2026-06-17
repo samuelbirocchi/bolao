@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DateBar } from "@/components/DateBar";
 import { LocalKickoff } from "@/components/LocalKickoff";
 import { TeamName } from "@/components/TeamName";
 import { notFound } from "next/navigation";
@@ -8,7 +9,12 @@ import { getGroupDetail, getMatchesWithPredictions, getScoringSettings } from "@
 import { displayName } from "@/lib/format";
 import { getDictionary, getLocale } from "@/lib/i18n/server";
 import { hasSaveFeedback } from "@/lib/saveFeedback";
-import { splitMatchesByKickoff } from "@/lib/matches";
+import {
+  getLocalDateKey,
+  groupUpcomingByDate,
+  isMatchLocked,
+  splitMatchesByKickoff,
+} from "@/lib/matches";
 import { calculateBasePoints, type ScoreWeights } from "@/lib/scoring";
 
 type MatchesPageProps = {
@@ -105,12 +111,16 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
 
   const now = Date.now();
   const unlockedMatchIds = matches
-    .filter((match) => new Date(match.kickoff_utc).getTime() > now)
+    .filter((match) => !isMatchLocked(match.kickoff_utc, now))
     .map((match) => match.id);
   const { pastMatches, upcomingMatches } = splitMatchesByKickoff(matches, now);
+  // Server-UTC grouping for v1: pills are bucketed by UTC date, not the
+  // viewer's local timezone (see PR notes for the limitation).
+  const dateGroups = groupUpcomingByDate(upcomingMatches, "UTC", locale);
+  const todayKey = getLocalDateKey(new Date().toISOString(), "UTC");
 
   const renderMatchCard = (match: (typeof matches)[number]) => {
-    const locked = new Date(match.kickoff_utc).getTime() <= now;
+    const locked = isMatchLocked(match.kickoff_utc, now);
     const homeName = displayName(
       match.home_team_name,
       match.home_team_placeholder ?? t.matches.fallbackTeam,
@@ -155,10 +165,18 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
       scoring,
       t.matches.victoryPoints,
     );
+    const drawVictoryPoints = buildVictoryPointCopy(
+      t.matches.draw,
+      match.odds_draw_probability,
+      scoring,
+      t.matches.victoryPoints.drawPoints,
+    );
 
     return (
       <article
-        className={locked ? "match-card match-card-clickable" : "match-card"}
+        className={
+          locked ? "match-card match-card-clickable match-card-past" : "match-card"
+        }
         key={match.id}
       >
         {locked ? (
@@ -198,76 +216,6 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
               : ""}
           </div>
         ) : null}
-
-        {match.odds_captured_at !== null ? (
-          <div className="notice">
-            {t.matches.odds}: {t.matches.home} {formatProbability(match.odds_home_win_probability)}{" "}
-            · {t.matches.draw} {formatProbability(match.odds_draw_probability)} ·{" "}
-            {t.matches.away} {formatProbability(match.odds_away_win_probability)}
-          </div>
-        ) : null}
-
-        <div className="score-inputs">
-          <label>
-            <TeamName canonicalName={match.home_team_name} name={homeName} />
-            <span
-              aria-describedby={`${match.id}-home-points-tooltip`}
-              className="prediction-points-help"
-              tabIndex={0}
-              title={homeVictoryPoints.tooltip}
-            >
-              <span className="prediction-points">{homeVictoryPoints.label}</span>
-              <span aria-hidden="true" className="prediction-points-icon">
-                ?
-              </span>
-              <span
-                className="prediction-points-tooltip"
-                id={`${match.id}-home-points-tooltip`}
-                role="tooltip"
-              >
-                {homeVictoryPoints.tooltip}
-              </span>
-            </span>
-            <input
-              aria-label={`${homeName} ${t.matches.goals}`}
-              defaultValue={match.prediction_home_goals ?? ""}
-              disabled={locked}
-              min={0}
-              name={`home-${match.id}`}
-              type="number"
-            />
-          </label>
-          <label>
-            <TeamName canonicalName={match.away_team_name} name={awayName} />
-            <span
-              aria-describedby={`${match.id}-away-points-tooltip`}
-              className="prediction-points-help"
-              tabIndex={0}
-              title={awayVictoryPoints.tooltip}
-            >
-              <span className="prediction-points">{awayVictoryPoints.label}</span>
-              <span aria-hidden="true" className="prediction-points-icon">
-                ?
-              </span>
-              <span
-                className="prediction-points-tooltip"
-                id={`${match.id}-away-points-tooltip`}
-                role="tooltip"
-              >
-                {awayVictoryPoints.tooltip}
-              </span>
-            </span>
-            <input
-              aria-label={`${awayName} ${t.matches.goals}`}
-              defaultValue={match.prediction_away_goals ?? ""}
-              disabled={locked}
-              min={0}
-              name={`away-${match.id}`}
-              type="number"
-            />
-          </label>
-          {locked ? <span className="muted">{t.matches.locked}</span> : null}
-        </div>
 
         {predictionStats ? (
           <details className="prediction-stats-details">
@@ -337,6 +285,99 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
         ) : locked ? (
           <div className="notice">{t.matches.noStats}</div>
         ) : null}
+
+        <div className="match-secondary">
+          {match.odds_captured_at !== null ? (
+            <div className="notice">
+              {t.matches.odds}: {t.matches.home} {formatProbability(match.odds_home_win_probability)}{" "}
+              · {t.matches.draw} {formatProbability(match.odds_draw_probability)} ·{" "}
+              {t.matches.away} {formatProbability(match.odds_away_win_probability)}
+            </div>
+          ) : null}
+
+          <div className="score-inputs">
+            <label>
+              <TeamName canonicalName={match.home_team_name} name={homeName} />
+              <span
+                aria-describedby={`${match.id}-home-points-tooltip`}
+                className="prediction-points-help"
+                tabIndex={0}
+                title={homeVictoryPoints.tooltip}
+              >
+                <span className="prediction-points">{homeVictoryPoints.label}</span>
+                <span aria-hidden="true" className="prediction-points-icon">
+                  ?
+                </span>
+                <span
+                  className="prediction-points-tooltip"
+                  id={`${match.id}-home-points-tooltip`}
+                  role="tooltip"
+                >
+                  {homeVictoryPoints.tooltip}
+                </span>
+              </span>
+              <input
+                aria-label={`${homeName} ${t.matches.goals}`}
+                defaultValue={match.prediction_home_goals ?? ""}
+                disabled={locked}
+                min={0}
+                name={`home-${match.id}`}
+                type="number"
+              />
+            </label>
+            <label>
+              <TeamName canonicalName={match.away_team_name} name={awayName} />
+              <span
+                aria-describedby={`${match.id}-away-points-tooltip`}
+                className="prediction-points-help"
+                tabIndex={0}
+                title={awayVictoryPoints.tooltip}
+              >
+                <span className="prediction-points">{awayVictoryPoints.label}</span>
+                <span aria-hidden="true" className="prediction-points-icon">
+                  ?
+                </span>
+                <span
+                  className="prediction-points-tooltip"
+                  id={`${match.id}-away-points-tooltip`}
+                  role="tooltip"
+                >
+                  {awayVictoryPoints.tooltip}
+                </span>
+              </span>
+              <input
+                aria-label={`${awayName} ${t.matches.goals}`}
+                defaultValue={match.prediction_away_goals ?? ""}
+                disabled={locked}
+                min={0}
+                name={`away-${match.id}`}
+                type="number"
+              />
+            </label>
+            {locked ? <span className="muted">{t.matches.locked}</span> : null}
+            {!locked ? (
+              <span
+                aria-describedby={`${match.id}-draw-points-tooltip`}
+                className="prediction-points-help prediction-draw-points"
+                tabIndex={0}
+                title={drawVictoryPoints.tooltip}
+              >
+                <span className="prediction-points">{drawVictoryPoints.label}</span>
+                <span aria-hidden="true" className="prediction-points-icon">
+                  ?
+                </span>
+                <span
+                  className="prediction-points-tooltip"
+                  id={`${match.id}-draw-points-tooltip`}
+                  role="tooltip"
+                >
+                  {drawVictoryPoints.tooltip}
+                </span>
+              </span>
+            ) : null}
+          </div>
+        </div>
+
         {locked ? <span className="match-card-cta">{t.matches.viewLivePicks}</span> : null}
       </article>
     );
@@ -377,7 +418,22 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
                 <div className="past-matches-list">{pastMatches.map(renderMatchCard)}</div>
               </details>
             ) : null}
-            {upcomingMatches.map(renderMatchCard)}
+            {dateGroups.length > 1 ? (
+              <DateBar
+                ariaLabel={t.matches.dateBarAriaLabel}
+                groups={dateGroups.map(({ dateKey, label }) => ({ dateKey, label }))}
+                todayKey={todayKey}
+                todayLabel={t.matches.today}
+              >
+                {dateGroups.map((group) => (
+                  <div data-date-key={group.dateKey} key={group.dateKey}>
+                    {group.matches.map(renderMatchCard)}
+                  </div>
+                ))}
+              </DateBar>
+            ) : (
+              upcomingMatches.map(renderMatchCard)
+            )}
           </section>
 
           <div className="match-form-actions">

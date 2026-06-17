@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { LiveMatchCriterion } from "@/lib/liveMatch";
 import { RankingChart, type RankingChartLine, type RankingChartStep } from "./RankingChart";
 
 export type PlayerMatchEntry = {
@@ -9,6 +10,19 @@ export type PlayerMatchEntry = {
   matchPoints: number;
   rank: number;
   rankDelta: number;
+  predictionHomeGoals: number | null;
+  predictionAwayGoals: number | null;
+  resultHomeGoals: number | null;
+  resultAwayGoals: number | null;
+  exact: boolean;
+  correctWinner: boolean;
+  correctDraw: boolean;
+  winnerGoals: boolean;
+  goalDifference: boolean;
+  loserGoals: boolean;
+  routBonus: boolean;
+  extraTime: boolean;
+  penalties: boolean;
 };
 
 type PlayerDetailToggleProps = {
@@ -29,7 +43,35 @@ type PlayerDetailToggleProps = {
   tablePointsHeader: string;
   tableRankHeader: string;
   tableChangeHeader: string;
+  tablePredictionHeader: string;
+  tableCriteriaHeader: string;
+  criteriaLabels: Record<LiveMatchCriterion, string>;
+  versusLabel: string;
+  noCriteriaLabel: string;
 };
+
+// Mirrors scoreCriteria order in liveMatch.ts so badges read consistently with
+// the per-match detail page. Only criteria that actually fired are returned.
+function firedCriteria(entry: PlayerMatchEntry): LiveMatchCriterion[] {
+  const criteria: LiveMatchCriterion[] = [];
+  if (entry.correctWinner) criteria.push("correctWinner");
+  if (entry.correctDraw) criteria.push("correctDraw");
+  if (entry.winnerGoals) criteria.push("winnerGoals");
+  if (entry.goalDifference) criteria.push("goalDifference");
+  if (entry.loserGoals) criteria.push("loserGoals");
+  if (entry.exact) criteria.push("exactScore");
+  if (entry.routBonus) criteria.push("rout");
+  if (entry.extraTime) criteria.push("extraTime");
+  if (entry.penalties) criteria.push("penalties");
+  return criteria;
+}
+
+function scoreline(home: number | null, away: number | null, versus: string) {
+  if (home === null || away === null) {
+    return null;
+  }
+  return `${home} ${versus} ${away}`;
+}
 
 function rankDelta(delta: number) {
   if (delta > 0) {
@@ -59,6 +101,11 @@ export function PlayerDetailToggle({
   tablePointsHeader,
   tableRankHeader,
   tableChangeHeader,
+  tablePredictionHeader,
+  tableCriteriaHeader,
+  criteriaLabels,
+  versusLabel,
+  noCriteriaLabel,
 }: PlayerDetailToggleProps) {
   const [mode, setMode] = useState<"match" | "day" | "points">("match");
 
@@ -124,20 +171,54 @@ export function PlayerDetailToggle({
               <thead>
                 <tr>
                   <th>{tableMatchHeader}</th>
+                  <th>{tablePredictionHeader}</th>
                   <th>{tablePointsHeader}</th>
+                  <th>{tableCriteriaHeader}</th>
                   <th>{tableRankHeader}</th>
                   <th>{tableChangeHeader}</th>
                 </tr>
               </thead>
               <tbody>
-                {perMatchEntries.map((entry) => (
-                  <tr key={entry.matchId}>
-                    <td>{entry.label}</td>
-                    <td>{entry.matchPoints}</td>
-                    <td>{entry.rank}</td>
-                    <td>{rankDelta(entry.rankDelta)}</td>
-                  </tr>
-                ))}
+                {perMatchEntries.map((entry) => {
+                  const result = scoreline(
+                    entry.resultHomeGoals,
+                    entry.resultAwayGoals,
+                    versusLabel,
+                  );
+                  const pick = scoreline(
+                    entry.predictionHomeGoals,
+                    entry.predictionAwayGoals,
+                    versusLabel,
+                  );
+                  const criteria = firedCriteria(entry);
+                  return (
+                    <tr key={entry.matchId}>
+                      <td>
+                        <span className="player-points-match">{entry.label}</span>
+                        {result ? (
+                          <span className="player-points-result">{result}</span>
+                        ) : null}
+                      </td>
+                      <td>{pick ?? "–"}</td>
+                      <td>{entry.matchPoints}</td>
+                      <td>
+                        {criteria.length > 0 ? (
+                          <span className="criteria-list">
+                            {criteria.map((criterion) => (
+                              <span className="criterion-pill" key={criterion}>
+                                {criteriaLabels[criterion]}
+                              </span>
+                            ))}
+                          </span>
+                        ) : (
+                          <span className="muted">{noCriteriaLabel}</span>
+                        )}
+                      </td>
+                      <td>{entry.rank}</td>
+                      <td>{rankDelta(entry.rankDelta)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

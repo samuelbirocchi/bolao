@@ -85,6 +85,7 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
 
   const homePoints = calculateBasePoints(match.odds_home_win_probability, scoring);
   const awayPoints = calculateBasePoints(match.odds_away_win_probability, scoring);
+  const drawPoints = calculateBasePoints(match.odds_draw_probability, scoring);
 
   return (
     <main className="page">
@@ -198,7 +199,8 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
           <div>
             <h3>{t.matches.victoryPoints.points.replace("{points}", String(homePoints)).replace("{team}", "")}</h3>
             <p className="muted">
-              {homeName}: {homePoints} pts · {awayName}: {awayPoints} pts
+              {homeName}: {homePoints} pts · {awayName}: {awayPoints} pts ·{" "}
+              {t.matches.draw}: {drawPoints} pts
             </p>
           </div>
 

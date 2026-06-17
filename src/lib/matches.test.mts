@@ -1,6 +1,24 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { splitMatchesByKickoff } from "./matches.ts";
+import {
+  getLocalDateKey,
+  groupUpcomingByDate,
+  isMatchLocked,
+  splitMatchesByKickoff,
+} from "./matches.ts";
+
+test("isMatchLocked returns true once kickoff has passed and false for future matches", () => {
+  const now = new Date("2026-06-11T16:00:00.000Z").getTime();
+
+  assert.equal(isMatchLocked("2026-06-11T12:00:00.000Z", now), true);
+  assert.equal(isMatchLocked("2026-06-11T20:00:00.000Z", now), false);
+});
+
+test("isMatchLocked treats the exact kickoff moment as locked (boundary is inclusive)", () => {
+  const now = new Date("2026-06-11T16:00:00.000Z").getTime();
+
+  assert.equal(isMatchLocked("2026-06-11T16:00:00.000Z", now), true);
+});
 
 test("splitMatchesByKickoff groups started matches separately from upcoming matches", () => {
   const now = new Date("2026-06-11T16:00:00.000Z").getTime();
@@ -41,5 +59,57 @@ test("splitMatchesByKickoff sorts past matches by kickoff descending (newest fir
   assert.deepEqual(
     grouped.upcomingMatches.map((match) => match.id),
     ["day5"],
+  );
+});
+
+test("getLocalDateKey returns the date in the given timezone (cross-midnight)", () => {
+  // 02:00 UTC is still the previous calendar day in America/Sao_Paulo (UTC-3).
+  assert.equal(
+    getLocalDateKey("2026-06-15T02:00:00.000Z", "America/Sao_Paulo"),
+    "2026-06-14",
+  );
+  assert.equal(getLocalDateKey("2026-06-15T02:00:00.000Z", "UTC"), "2026-06-15");
+});
+
+test("groupUpcomingByDate buckets same-date matches and sorts ascending", () => {
+  const matches = [
+    { id: "b", kickoff_utc: "2026-06-15T20:00:00.000Z" },
+    { id: "a1", kickoff_utc: "2026-06-14T13:00:00.000Z" },
+    { id: "a2", kickoff_utc: "2026-06-14T19:00:00.000Z" },
+  ];
+
+  const groups = groupUpcomingByDate(matches, "UTC", "en-US");
+
+  assert.deepEqual(
+    groups.map((group) => group.dateKey),
+    ["2026-06-14", "2026-06-15"],
+  );
+  assert.deepEqual(
+    groups[0].matches.map((match) => match.id),
+    ["a1", "a2"],
+  );
+  assert.deepEqual(
+    groups[1].matches.map((match) => match.id),
+    ["b"],
+  );
+});
+
+test("groupUpcomingByDate handles empty input", () => {
+  assert.deepEqual(groupUpcomingByDate([], "UTC", "en-US"), []);
+});
+
+test("groupUpcomingByDate handles a single date", () => {
+  const matches = [
+    { id: "a", kickoff_utc: "2026-06-14T13:00:00.000Z" },
+    { id: "b", kickoff_utc: "2026-06-14T19:00:00.000Z" },
+  ];
+
+  const groups = groupUpcomingByDate(matches, "UTC", "en-US");
+
+  assert.equal(groups.length, 1);
+  assert.equal(groups[0].dateKey, "2026-06-14");
+  assert.deepEqual(
+    groups[0].matches.map((match) => match.id),
+    ["a", "b"],
   );
 });

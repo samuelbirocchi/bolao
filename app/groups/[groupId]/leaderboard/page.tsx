@@ -2,11 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { type RankingChartLine } from "@/components/RankingChart";
 import { PlayerDetailToggle, type PlayerMatchEntry } from "@/components/PlayerDetailToggle";
+import { PodiumHighlights } from "@/components/PodiumHighlights";
 import { UserAvatar } from "@/components/UserAvatar";
 import { requireUser } from "@/lib/auth";
 import {
   getGroupDetail,
-  getLastRankingUpdate,
   getLeaderboard,
   getMatchRankingData,
   getScoringSettings,
@@ -14,6 +14,7 @@ import {
 import { displayName } from "@/lib/format";
 import type { Locale } from "@/lib/i18n";
 import { getDictionary, getLocale } from "@/lib/i18n/server";
+import { getPodiumZones } from "@/lib/leaderboard";
 import { buildRanking } from "@/lib/ranking";
 
 type LeaderboardPageProps = {
@@ -43,11 +44,10 @@ function formatLastUpdated(iso: string, locale: Locale) {
 export default async function LeaderboardPage({ params }: LeaderboardPageProps) {
   const { user } = await requireUser();
   const { groupId } = await params;
-  const [group, entries, rankingData, lastUpdated, scoring, locale, t] = await Promise.all([
+  const [group, entries, rankingData, scoring, locale, t] = await Promise.all([
     getGroupDetail(groupId, user.id),
     getLeaderboard(groupId),
     getMatchRankingData(groupId),
-    getLastRankingUpdate(groupId),
     getScoringSettings(),
     getLocale(),
     getDictionary(),
@@ -119,12 +119,37 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
           matchPoints: entry.matchPoints,
           rank: entry.rank,
           rankDelta: entry.rankDelta,
+          predictionHomeGoals: entry.predictionHomeGoals,
+          predictionAwayGoals: entry.predictionAwayGoals,
+          resultHomeGoals: entry.resultHomeGoals,
+          resultAwayGoals: entry.resultAwayGoals,
+          exact: entry.exact,
+          correctWinner: entry.correctWinner,
+          correctDraw: entry.correctDraw,
+          winnerGoals: entry.winnerGoals,
+          goalDifference: entry.goalDifference,
+          loserGoals: entry.loserGoals,
+          routBonus: entry.routBonus,
+          extraTime: entry.extraTime,
+          penalties: entry.penalties,
         };
       })
       .filter((row): row is PlayerMatchEntry => row !== null);
 
   const perfFor = (userId: string) =>
     model.performance.find((stat) => stat.userId === userId) ?? null;
+
+  const criteriaLabels = {
+    correctWinner: t.matches.correctWinner,
+    correctDraw: t.matches.correctDraw,
+    winnerGoals: t.matches.winnerGoals,
+    goalDifference: t.matches.goalDifference,
+    loserGoals: t.matches.loserGoals,
+    exactScore: t.matches.exactScore,
+    rout: t.matches.rout,
+    extraTime: t.matches.extraTime,
+    penalties: t.matches.penalties,
+  } as const;
 
   // Competition ranking: entries with the same total_points share the same rank,
   // and the next rank skips accordingly (1, 1, 3 not 1, 1, 2).
@@ -135,6 +160,8 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
     const rank = prev && prev.entry.total_points === entry.total_points ? prev.rank : i + 1;
     rankedEntries.push({ entry, rank });
   }
+
+  const { topZone, bottomZone } = getPodiumZones(rankedEntries);
 
   return (
     <main className="page">
@@ -158,15 +185,23 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
           .replace("{goalDifference}", String(scoring.goalDifferenceBonusPoints))}
       </div>
 
-      {lastUpdated ? (
+      {rankingData.lastUpdatedAt ? (
         <p className="muted" style={{ marginBottom: "1rem" }}>
-          {t.leaderboard.lastUpdated.replace("{datetime}", formatLastUpdated(lastUpdated, locale))}
+          {t.leaderboard.lastUpdated.replace("{datetime}", formatLastUpdated(rankingData.lastUpdatedAt, locale))}
         </p>
       ) : null}
 
       {entries.length === 0 ? (
         <div className="empty">{t.leaderboard.empty}</div>
       ) : (
+        <>
+        <PodiumHighlights
+          bottomLabel={t.leaderboard.bottomZoneLabel}
+          bottomZone={bottomZone}
+          playerFallback={t.leaderboard.player}
+          topLabel={t.leaderboard.topZoneLabel}
+          topZone={topZone}
+        />
         <section className="leaderboard">
           {rankedEntries.map(({ entry, rank }) => {
             const stat = perfFor(entry.user_id);
@@ -187,7 +222,9 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
                         url={entry.avatar_url}
                       />
                       <div>
-                        <strong>{entry.display_name ?? t.leaderboard.player}</strong>
+                        <Link href={`/groups/${group.id}/ranking/${entry.user_id}`} className="leader-name-link">
+                          <strong>{entry.display_name ?? t.leaderboard.player}</strong>
+                        </Link>
                         <div className="scoring-badges">
                           <span className="scoring-badge">
                             {t.leaderboard.base} <strong>{entry.base_points}</strong>
@@ -242,12 +279,18 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
                     tablePointsHeader={t.ranking.points}
                     tableRankHeader={t.ranking.rankAfterMatch}
                     tableChangeHeader={t.ranking.change}
+                    tablePredictionHeader={t.ranking.prediction}
+                    tableCriteriaHeader={t.ranking.criteria}
+                    criteriaLabels={criteriaLabels}
+                    versusLabel={t.matches.versus}
+                    noCriteriaLabel={t.ranking.noCriteria}
                   />
                 </details>
               </article>
             );
           })}
         </section>
+        </>
       )}
     </main>
   );
