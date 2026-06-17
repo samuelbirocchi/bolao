@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { type RankingChartLine } from "@/components/RankingChart";
 import { PlayerDetailToggle, type PlayerMatchEntry } from "@/components/PlayerDetailToggle";
+import { PodiumHighlights } from "@/components/PodiumHighlights";
 import { UserAvatar } from "@/components/UserAvatar";
 import { requireUser } from "@/lib/auth";
 import {
@@ -14,6 +15,7 @@ import {
 import { displayName } from "@/lib/format";
 import type { Locale } from "@/lib/i18n";
 import { getDictionary, getLocale } from "@/lib/i18n/server";
+import { getPodiumZones } from "@/lib/leaderboard";
 import { buildRanking } from "@/lib/ranking";
 
 type LeaderboardPageProps = {
@@ -136,6 +138,8 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
     rankedEntries.push({ entry, rank });
   }
 
+  const { topZone, bottomZone } = getPodiumZones(rankedEntries);
+
   return (
     <main className="page">
       <div className="page-title">
@@ -167,6 +171,14 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
       {entries.length === 0 ? (
         <div className="empty">{t.leaderboard.empty}</div>
       ) : (
+        <>
+        <PodiumHighlights
+          bottomLabel={t.leaderboard.bottomZoneLabel}
+          bottomZone={bottomZone}
+          playerFallback={t.leaderboard.player}
+          topLabel={t.leaderboard.topZoneLabel}
+          topZone={topZone}
+        />
         <section className="leaderboard">
           {rankedEntries.map(({ entry, rank }) => {
             const stat = perfFor(entry.user_id);
@@ -248,6 +260,7 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
             );
           })}
         </section>
+        </>
       )}
     </main>
   );

@@ -174,6 +174,8 @@ export const dictionaries = {
       bonus: "Bonus",
       winners: "Winners",
       lastUpdated: "Last updated: {datetime}",
+      topZoneLabel: "Paul the Octopus 🐙",
+      bottomZoneLabel: "Craque Neto 🥶",
     },
     ranking: {
       title: "Ranking",
@@ -456,6 +458,8 @@ export const dictionaries = {
       bonus: "Bônus",
       winners: "Vencedores",
       lastUpdated: "Última atualização: {datetime}",
+      topZoneLabel: "Polvo Paul 🐙",
+      bottomZoneLabel: "Craque Neto 🥶",
     },
     ranking: {
       title: "Ranking",
@@ -740,6 +744,8 @@ export const dictionaries = {
       bonus: "Bono",
       winners: "Ganadores",
       lastUpdated: "Última actualización: {datetime}",
+      topZoneLabel: "Pulpo Paul 🐙",
+      bottomZoneLabel: "Craque Neto 🥶",
     },
     ranking: {
       title: "Ranking",
