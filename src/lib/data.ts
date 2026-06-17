@@ -94,6 +94,21 @@ export type ClosedMatchDetail = {
   view: LiveMatchView;
 };
 
+export type AdminGroup = {
+  id: string;
+  name: string;
+  created_at: string;
+  member_count: number;
+};
+
+export type AdminGroupMember = {
+  user_id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  role: string;
+  joined_at: string;
+};
+
 export type AdminMatch = {
   id: string;
   match_number: number;
@@ -570,4 +585,65 @@ export async function getAdminMatches(): Promise<AdminMatch[]> {
       odds_away_win_probability: odds?.away_win_probability ?? null,
     };
   }) as AdminMatch[];
+}
+
+export async function getAdminGroups(): Promise<AdminGroup[]> {
+  if (!hasSupabaseEnv()) {
+    return [];
+  }
+
+  const supabase = await createClient();
+  const [{ data: groups }, { data: memberships }] = await Promise.all([
+    supabase
+      .from("groups")
+      .select("id, name, created_at")
+      .order("created_at", { ascending: true }),
+    supabase.from("group_memberships").select("group_id"),
+  ]);
+
+  const memberCounts = new Map<string, number>();
+  for (const membership of memberships ?? []) {
+    memberCounts.set(membership.group_id, (memberCounts.get(membership.group_id) ?? 0) + 1);
+  }
+
+  return (groups ?? []).map((group) => ({
+    id: group.id,
+    name: group.name,
+    created_at: group.created_at,
+    member_count: memberCounts.get(group.id) ?? 0,
+  }));
+}
+
+export async function getAdminGroupMembers(groupId: string): Promise<AdminGroupMember[]> {
+  if (!hasSupabaseEnv()) {
+    return [];
+  }
+
+  const supabase = await createClient();
+  const { data: memberships } = await supabase
+    .from("group_memberships")
+    .select("user_id, role, joined_at")
+    .eq("group_id", groupId)
+    .order("joined_at", { ascending: true });
+
+  const userIds = (memberships ?? []).map((membership) => membership.user_id);
+  if (userIds.length === 0) {
+    return [];
+  }
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, display_name, avatar_url")
+    .in("id", userIds);
+
+  return (memberships ?? []).map((membership) => {
+    const profile = profiles?.find((item) => item.id === membership.user_id);
+    return {
+      user_id: membership.user_id,
+      display_name: profile?.display_name ?? null,
+      avatar_url: profile?.avatar_url ?? null,
+      role: membership.role,
+      joined_at: membership.joined_at,
+    };
+  });
 }
