@@ -222,7 +222,9 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
                         url={entry.avatar_url}
                       />
                       <div>
-                        <strong>{entry.display_name ?? t.leaderboard.player}</strong>
+                        <Link href={`/groups/${group.id}/ranking/${entry.user_id}`} className="leader-name-link">
+                          <strong>{entry.display_name ?? t.leaderboard.player}</strong>
+                        </Link>
                         <div className="scoring-badges">
                           <span className="scoring-badge">
                             {t.leaderboard.base} <strong>{entry.base_points}</strong>
