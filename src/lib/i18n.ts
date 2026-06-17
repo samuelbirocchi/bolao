@@ -219,6 +219,7 @@ export const dictionaries = {
       criteria: "Criteria",
       noCriteria: "–",
       noData: "No completed matches yet. Come back after the first results are in.",
+      lastUpdated: "Last updated",
     },
     adminMatches: {
       title: "Matches",
@@ -526,6 +527,7 @@ export const dictionaries = {
       criteria: "Critério",
       noCriteria: "–",
       noData: "Nenhum jogo concluído ainda. Volte após os primeiros resultados.",
+      lastUpdated: "Última atualização",
     },
     adminMatches: {
       title: "Jogos",
@@ -835,6 +837,7 @@ export const dictionaries = {
       criteria: "Criterio",
       noCriteria: "–",
       noData: "Aún no hay partidos completados. Vuelve tras los primeros resultados.",
+      lastUpdated: "Última actualización",
     },
     adminMatches: {
       title: "Partidos",
