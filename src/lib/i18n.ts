@@ -12,6 +12,9 @@ export const localeOptions: { value: Locale; label: string }[] = [
   { value: "es", label: "Español" },
 ];
 
+// UTC-3 year-round (Brazil abolished DST in 2019) — stable offset for date grouping.
+export const APP_TIMEZONE = "America/Sao_Paulo";
+
 export function isLocale(value: string): value is Locale {
   return locales.includes(value as Locale);
 }

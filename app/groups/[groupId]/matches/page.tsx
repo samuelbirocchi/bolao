@@ -7,6 +7,7 @@ import { saveAllPredictionsAction } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
 import { getGroupDetail, getMatchesWithPredictions, getScoringSettings } from "@/lib/data";
 import { displayName } from "@/lib/format";
+import { APP_TIMEZONE } from "@/lib/i18n";
 import { getDictionary, getLocale } from "@/lib/i18n/server";
 import { hasSaveFeedback } from "@/lib/saveFeedback";
 import {
@@ -114,10 +115,10 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
     .filter((match) => !isMatchLocked(match.kickoff_utc, now))
     .map((match) => match.id);
   const { pastMatches, upcomingMatches } = splitMatchesByKickoff(matches, now);
-  // Server-UTC grouping for v1: pills are bucketed by UTC date, not the
-  // viewer's local timezone (see PR notes for the limitation).
-  const dateGroups = groupUpcomingByDate(upcomingMatches, "UTC", locale);
-  const todayKey = getLocalDateKey(new Date().toISOString(), "UTC");
+  // SSR can't know each viewer's timezone, so group by the app timezone for
+  // deterministic bucketing; LocalKickoff renders per-user times client-side.
+  const dateGroups = groupUpcomingByDate(upcomingMatches, APP_TIMEZONE, locale);
+  const todayKey = getLocalDateKey(new Date().toISOString(), APP_TIMEZONE);
 
   const renderMatchCard = (match: (typeof matches)[number]) => {
     const locked = isMatchLocked(match.kickoff_utc, now);
