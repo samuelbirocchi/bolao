@@ -1075,6 +1075,67 @@ label {
   background: #6aa9e9;
 }
 
+.scoreline-list {
+  display: grid;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.scoreline-group {
+  list-style: none;
+}
+
+.scoreline-summary {
+  align-items: center;
+  cursor: pointer;
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: minmax(5rem, 0.75fr) minmax(5rem, 1fr) auto auto;
+  list-style: none;
+  padding: 0.2rem 0;
+}
+
+.scoreline-summary::-webkit-details-marker {
+  display: none;
+}
+
+.scoreline-summary > .scoreline-score {
+  font-weight: 850;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.scoreline-count {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  min-width: 0;
+}
+
+.scoreline-participants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.6rem;
+  list-style: none;
+  margin: 0.45rem 0 0;
+  padding: 0 0.1rem;
+}
+
+.scoreline-participants li {
+  align-items: center;
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 700;
+  gap: 0.35rem;
+}
+
+.scoreline-participants li.current {
+  color: var(--brand-strong);
+}
+
 .prediction-points {
   color: var(--brand-strong);
   font-size: 0.78rem;
@@ -1385,6 +1446,14 @@ label {
   }
 
   .stat-bar-row strong {
+    text-align: left;
+  }
+
+  .scoreline-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .scoreline-summary strong {
     text-align: left;
   }
 
