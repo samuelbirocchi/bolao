@@ -1,7 +1,16 @@
+export type ScorelineParticipant = {
+  userId: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+};
+
 export type PredictionStatsInput = {
   match_id: string;
   home_goals: number;
   away_goals: number;
+  user_id?: string;
+  display_name?: string | null;
+  avatar_url?: string | null;
 };
 
 export type PredictionOutcomeStats = {
@@ -14,6 +23,7 @@ export type PredictionScorelineStats = {
   homeGoals: number;
   awayGoals: number;
   count: number;
+  participants: ScorelineParticipant[];
 };
 
 export type MatchPredictionStats = {
@@ -21,6 +31,15 @@ export type MatchPredictionStats = {
   outcomes: PredictionOutcomeStats;
   scorelines: PredictionScorelineStats[];
 };
+
+function compareParticipants(a: ScorelineParticipant, b: ScorelineParticipant) {
+  const aName = a.displayName ?? "";
+  const bName = b.displayName ?? "";
+  if (aName !== bName) {
+    return aName.localeCompare(bName);
+  }
+  return a.userId.localeCompare(b.userId);
+}
 
 export function buildMatchPredictionStats(
   predictions: PredictionStatsInput[],
@@ -57,6 +76,19 @@ export function buildMatchPredictionStats(
         homeGoals: prediction.home_goals,
         awayGoals: prediction.away_goals,
         count: 1,
+        participants: [],
+      });
+    }
+
+    if (prediction.user_id) {
+      const target = stats.scorelines.find(
+        (item) =>
+          item.homeGoals === prediction.home_goals && item.awayGoals === prediction.away_goals,
+      );
+      target?.participants.push({
+        userId: prediction.user_id,
+        displayName: prediction.display_name ?? null,
+        avatarUrl: prediction.avatar_url ?? null,
       });
     }
   }
@@ -69,6 +101,9 @@ export function buildMatchPredictionStats(
         a.homeGoals - b.homeGoals ||
         a.awayGoals - b.awayGoals,
     );
+    for (const scoreline of stats.scorelines) {
+      scoreline.participants.sort(compareParticipants);
+    }
   }
 
   return statsByMatch;

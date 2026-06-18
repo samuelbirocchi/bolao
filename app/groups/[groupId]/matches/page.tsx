@@ -2,6 +2,7 @@ import Link from "next/link";
 import { DateBar } from "@/components/DateBar";
 import { LocalKickoff } from "@/components/LocalKickoff";
 import { TeamName } from "@/components/TeamName";
+import { UserAvatar } from "@/components/UserAvatar";
 import { notFound } from "next/navigation";
 import { saveAllPredictionsAction } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
@@ -254,27 +255,71 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
                   <h3>{t.matches.commonScores}</h3>
                   {commonScorelines.length > 0 ? (
                     <ol className="scoreline-list">
-                      {commonScorelines.map((scoreline) => (
-                        <li
-                          className="stat-bar-row"
-                          key={`${scoreline.homeGoals}-${scoreline.awayGoals}`}
-                        >
-                          <span>
-                            {scoreline.homeGoals} x {scoreline.awayGoals}
-                          </span>
-                          <div className="stat-bar-track" aria-hidden="true">
-                            <span
-                              className="stat-bar-fill scoreline"
-                              style={{
-                                width: statsBarWidth(scoreline.count, predictionStats.total),
-                              }}
-                            />
-                          </div>
-                          <strong>
-                            {formatStatsShare(scoreline.count, predictionStats.total, locale)}
-                          </strong>
-                        </li>
-                      ))}
+                      {commonScorelines.map((scoreline) => {
+                        const participants = scoreline.participants;
+                        return (
+                          <li
+                            className="scoreline-group"
+                            key={`${scoreline.homeGoals}-${scoreline.awayGoals}`}
+                          >
+                            <details className="scoreline-details">
+                              <summary className="scoreline-summary">
+                                <span className="scoreline-score">
+                                  {scoreline.homeGoals} x {scoreline.awayGoals}
+                                </span>
+                                <div className="stat-bar-track" aria-hidden="true">
+                                  <span
+                                    className="stat-bar-fill scoreline"
+                                    style={{
+                                      width: statsBarWidth(
+                                        scoreline.count,
+                                        predictionStats.total,
+                                      ),
+                                    }}
+                                  />
+                                </div>
+                                <strong>
+                                  {formatStatsShare(
+                                    scoreline.count,
+                                    predictionStats.total,
+                                    locale,
+                                  )}
+                                </strong>
+                                {participants.length > 0 ? (
+                                  <span className="scoreline-count">
+                                    {t.matches.scorelinePeople.replace(
+                                      "{count}",
+                                      String(participants.length),
+                                    )}
+                                  </span>
+                                ) : null}
+                              </summary>
+                              {participants.length > 0 ? (
+                                <ul className="scoreline-participants">
+                                  {participants.map((participant) => (
+                                    <li
+                                      className={
+                                        participant.userId === user.id ? "current" : undefined
+                                      }
+                                      key={participant.userId}
+                                    >
+                                      <UserAvatar
+                                        name={participant.displayName}
+                                        seed={participant.userId}
+                                        size={24}
+                                        url={participant.avatarUrl}
+                                      />
+                                      <span>
+                                        {displayName(participant.displayName, t.matches.player)}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : null}
+                            </details>
+                          </li>
+                        );
+                      })}
                     </ol>
                   ) : (
                     <p className="muted">{t.matches.noStats}</p>

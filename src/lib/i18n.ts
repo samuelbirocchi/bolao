@@ -134,6 +134,7 @@ export const dictionaries = {
       winnerStats: "Winner",
       commonScores: "Most common scores",
       noStats: "No locked predictions yet.",
+      scorelinePeople: "{count} people",
       victoryPoints: {
         points: "Win: {points} pts",
         tooltip:
@@ -453,6 +454,7 @@ export const dictionaries = {
       winnerStats: "Vencedor",
       commonScores: "Resultados mais comuns",
       noStats: "Nenhum palpite travado ainda.",
+      scorelinePeople: "{count} pessoas",
       victoryPoints: {
         points: "Vitória: {points} pts",
         tooltip:
@@ -774,6 +776,7 @@ export const dictionaries = {
       winnerStats: "Ganador",
       commonScores: "Resultados más comunes",
       noStats: "Aún no hay predicciones bloqueadas.",
+      scorelinePeople: "{count} personas",
       victoryPoints: {
         points: "Victoria: {points} pts",
         tooltip:

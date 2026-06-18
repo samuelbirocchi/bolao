@@ -3,7 +3,6 @@ import { defaultScoreWeights, type MatchResolution } from "@/lib/scoring";
 import {
   buildMatchPredictionStats,
   type MatchPredictionStats,
-  type PredictionStatsInput,
 } from "@/lib/prediction-stats";
 import { buildLiveMatchView, type LiveMatchView } from "@/lib/liveMatch";
 import type { RankingMatch, RankingMember, RankingScore } from "@/lib/ranking";
@@ -239,6 +238,7 @@ export async function getMatchesWithPredictions(
     { data: groupPredictions },
     { data: results },
     { data: oddsSnapshots },
+    { data: members },
   ] = await Promise.all([
       supabase
         .from("matches")
@@ -254,7 +254,7 @@ export async function getMatchesWithPredictions(
         .eq("user_id", userId),
       supabase
         .from("predictions")
-        .select("match_id, home_goals, away_goals")
+        .select("match_id, home_goals, away_goals, user_id")
         .eq("group_id", groupId),
       supabase
         .from("match_results")
@@ -264,11 +264,31 @@ export async function getMatchesWithPredictions(
         .select(
           "match_id, captured_at, home_win_probability, draw_probability, away_win_probability",
         ),
+      supabase
+        .from("leaderboard_entries")
+        .select("user_id, display_name, avatar_url")
+        .eq("group_id", groupId),
     ]);
 
-  const predictionStatsByMatch = buildMatchPredictionStats(
-    (groupPredictions ?? []) as PredictionStatsInput[],
+  const memberById = new Map<string, { display_name: string | null; avatar_url: string | null }>(
+    (members ?? []).map((member) => [
+      member.user_id,
+      { display_name: member.display_name, avatar_url: member.avatar_url },
+    ]),
   );
+  const predictionStatsInput = (groupPredictions ?? []).map((prediction) => {
+    const member = memberById.get(prediction.user_id);
+    return {
+      match_id: prediction.match_id,
+      home_goals: prediction.home_goals,
+      away_goals: prediction.away_goals,
+      user_id: prediction.user_id,
+      display_name: member?.display_name ?? null,
+      avatar_url: member?.avatar_url ?? null,
+    };
+  });
+
+  const predictionStatsByMatch = buildMatchPredictionStats(predictionStatsInput);
 
   return (matches ?? []).map((match) => {
     const prediction = predictions?.find((item) => item.match_id === match.id);
