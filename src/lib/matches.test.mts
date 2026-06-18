@@ -71,6 +71,17 @@ test("getLocalDateKey returns the date in the given timezone (cross-midnight)", 
   assert.equal(getLocalDateKey("2026-06-15T02:00:00.000Z", "UTC"), "2026-06-15");
 });
 
+test("getLocalDateKey keeps a late-night BRT kickoff on the local day (issue #64)", () => {
+  // 19/06 21:30 GMT-3 = 20/06 00:30 UTC. UTC grouping would place this on
+  // 20/06, but America/Sao_Paulo keeps it on 19/06 — the day a Brazil-based
+  // user sees the kickoff.
+  assert.equal(
+    getLocalDateKey("2026-06-20T00:30:00.000Z", "America/Sao_Paulo"),
+    "2026-06-19",
+  );
+  assert.equal(getLocalDateKey("2026-06-20T00:30:00.000Z", "UTC"), "2026-06-20");
+});
+
 test("groupUpcomingByDate buckets same-date matches and sorts ascending", () => {
   const matches = [
     { id: "b", kickoff_utc: "2026-06-15T20:00:00.000Z" },
@@ -91,6 +102,34 @@ test("groupUpcomingByDate buckets same-date matches and sorts ascending", () => 
   assert.deepEqual(
     groups[1].matches.map((match) => match.id),
     ["b"],
+  );
+});
+
+test("groupUpcomingByDate with app timezone buckets cross-midnight matches on the local day (issue #64)", () => {
+  // 21:30 GMT-3 on 19/06 (00:30 UTC on 20/06) and 12:00 GMT-3 on 19/06 both
+  // fall on 19/06 in America/Sao_Paulo. With UTC they split across 19/06 and
+  // 20/06 — the bug from issue #64.
+  const matches = [
+    { id: "noon", kickoff_utc: "2026-06-19T15:00:00.000Z" },
+    { id: "late", kickoff_utc: "2026-06-20T00:30:00.000Z" },
+  ];
+
+  const groups = groupUpcomingByDate(matches, "America/Sao_Paulo", "pt-BR");
+
+  assert.deepEqual(
+    groups.map((group) => group.dateKey),
+    ["2026-06-19"],
+  );
+  assert.deepEqual(
+    groups[0].matches.map((match) => match.id),
+    ["noon", "late"],
+  );
+
+  // Contrast: with UTC the late match lands on 20/06 (the bug).
+  const utcGroups = groupUpcomingByDate(matches, "UTC", "pt-BR");
+  assert.deepEqual(
+    utcGroups.map((group) => group.dateKey),
+    ["2026-06-19", "2026-06-20"],
   );
 });
 
