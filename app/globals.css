@@ -28,7 +28,9 @@
 }
 
 html {
+  -webkit-text-size-adjust: 100%;
   min-height: 100%;
+  overflow-x: hidden;
   background:
     radial-gradient(circle at 10% -10%, rgba(240, 187, 53, 0.34), transparent 30rem),
     radial-gradient(circle at 88% 8%, rgba(13, 122, 89, 0.32), transparent 34rem),
@@ -36,8 +38,11 @@ html {
 }
 
 body {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
   min-height: 100%;
   margin: 0;
+  overflow-x: hidden;
   background:
     linear-gradient(rgba(255, 255, 255, 0.62) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.58) 1px, transparent 1px),
@@ -143,11 +148,13 @@ button.danger,
 }
 
 input,
-select {
+select,
+textarea {
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text);
+  font-size: 1rem;
   min-height: 2.8rem;
   padding: 0.72rem 0.85rem;
   transition:
@@ -175,6 +182,7 @@ label {
   display: grid;
   grid-template-rows: auto 1fr;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .topbar {
@@ -193,6 +201,7 @@ label {
   top: 0.75rem;
   width: calc(100% - clamp(1rem, 4vw, 2rem));
   z-index: 10;
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
   backdrop-filter: blur(18px) saturate(1.35);
 }
 
@@ -419,6 +428,7 @@ label {
   padding: clamp(1rem, 3vw, 1.35rem);
   position: relative;
   z-index: 1;
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
   backdrop-filter: blur(18px) saturate(1.3);
 }
 
@@ -534,6 +544,7 @@ label {
   background: var(--panel);
   border: 1px solid rgba(255, 255, 255, 0.72);
   box-shadow: var(--shadow-soft);
+  -webkit-backdrop-filter: blur(16px) saturate(1.18);
   backdrop-filter: blur(16px) saturate(1.18);
 }
 
@@ -614,9 +625,11 @@ label {
 }
 
 .tabs {
+  -webkit-overflow-scrolling: touch;
   display: flex;
   gap: 0.5rem;
   margin: 0 0 1rem;
+  max-width: 100%;
   overflow-x: auto;
   padding-bottom: 0.1rem;
 }
@@ -637,9 +650,11 @@ label {
 }
 
 .date-bar {
+  -webkit-overflow-scrolling: touch;
   display: flex;
   gap: 0.5rem;
   margin: 0 0 0.8rem;
+  max-width: 100%;
   overflow-x: auto;
   padding-bottom: 0.1rem;
 }
@@ -872,6 +887,7 @@ label {
   background: var(--panel-muted);
   border-color: var(--border);
   box-shadow: var(--shadow-flat);
+  -webkit-backdrop-filter: blur(8px) saturate(1);
   backdrop-filter: blur(8px) saturate(1);
 }
 
@@ -1360,6 +1376,10 @@ label {
     justify-content: flex-start;
   }
 
+  .nav a:hover {
+    transform: none;
+  }
+
   .grid.two,
   .grid.three {
     grid-template-columns: 1fr;
@@ -1548,6 +1568,7 @@ label {
   border-radius: var(--radius);
   box-shadow: var(--shadow-soft);
   padding: 1.05rem;
+  -webkit-backdrop-filter: blur(16px) saturate(1.18);
   backdrop-filter: blur(16px) saturate(1.18);
 }
 
@@ -1822,6 +1843,7 @@ label {
   border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: var(--radius);
   box-shadow: var(--shadow-soft);
+  -webkit-backdrop-filter: blur(16px) saturate(1.18);
   backdrop-filter: blur(16px) saturate(1.18);
   display: grid;
   gap: 0.7rem;
