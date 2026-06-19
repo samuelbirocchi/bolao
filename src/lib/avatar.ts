@@ -104,6 +104,19 @@ export function initialsFor(name: string | null | undefined): string {
   return (first + second).toUpperCase();
 }
 
+// Build a Gravatar image URL from a stored hash (md5 of the user's email).
+// d=404 makes Gravatar return 404 when no avatar exists, so the UI can fall
+// back to initials on the image's onError. Returns null for a blank hash.
+export function gravatarUrl(hash: string | null | undefined, size = 36): string | null {
+  const trimmed = hash?.trim();
+  if (!trimmed) {
+    return null;
+  }
+  // Render at 2x for crisp display on retina screens.
+  const px = Math.max(1, Math.round(size * 2));
+  return `https://www.gravatar.com/avatar/${trimmed}?s=${px}&d=404`;
+}
+
 export function colorForSeed(seed: string): string {
   let hash = 2166136261;
   for (let i = 0; i < seed.length; i += 1) {

@@ -16,17 +16,19 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
 
   let displayName = "";
   let avatarUrl: string | null = null;
+  let gravatarHash: string | null = null;
   let passwordSetAt: string | null = null;
 
   if (hasSupabaseEnv()) {
     const supabase = await createClient();
     const { data: profile } = await supabase
       .from("profiles")
-      .select("display_name, avatar_url, password_set_at")
+      .select("display_name, avatar_url, gravatar_hash, password_set_at")
       .eq("id", user.id)
       .single();
     displayName = profile?.display_name ?? "";
     avatarUrl = profile?.avatar_url ?? null;
+    gravatarHash = profile?.gravatar_hash ?? null;
     passwordSetAt = profile?.password_set_at ?? null;
   }
 
@@ -67,7 +69,13 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
 
         <section className="card stack" aria-label={t.settings.currentAvatar}>
           <span className="muted">{t.settings.currentAvatar}</span>
-          <UserAvatar name={displayName || null} seed={user.id} size={88} url={avatarUrl} />
+          <UserAvatar
+            gravatarHash={gravatarHash}
+            name={displayName || null}
+            seed={user.id}
+            size={88}
+            url={avatarUrl}
+          />
         </section>
 
         <form className="card form-grid" action={updateProfileAction}>

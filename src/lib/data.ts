@@ -54,6 +54,7 @@ export type LeaderboardEntry = {
   user_id: string;
   display_name: string | null;
   avatar_url: string | null;
+  gravatar_hash: string | null;
   joined_at: string;
   total_points: number;
   base_points: number;
@@ -266,14 +267,21 @@ export async function getMatchesWithPredictions(
         ),
       supabase
         .from("leaderboard_entries")
-        .select("user_id, display_name, avatar_url")
+        .select("user_id, display_name, avatar_url, gravatar_hash")
         .eq("group_id", groupId),
     ]);
 
-  const memberById = new Map<string, { display_name: string | null; avatar_url: string | null }>(
+  const memberById = new Map<
+    string,
+    { display_name: string | null; avatar_url: string | null; gravatar_hash: string | null }
+  >(
     (members ?? []).map((member) => [
       member.user_id,
-      { display_name: member.display_name, avatar_url: member.avatar_url },
+      {
+        display_name: member.display_name,
+        avatar_url: member.avatar_url,
+        gravatar_hash: member.gravatar_hash,
+      },
     ]),
   );
   const predictionStatsInput = (groupPredictions ?? []).map((prediction) => {
@@ -285,6 +293,7 @@ export async function getMatchesWithPredictions(
       user_id: prediction.user_id,
       display_name: member?.display_name ?? null,
       avatar_url: member?.avatar_url ?? null,
+      gravatar_hash: member?.gravatar_hash ?? null,
     };
   });
 
@@ -322,7 +331,7 @@ export async function getLeaderboard(groupId: string): Promise<LeaderboardEntry[
   const { data } = await supabase
     .from("leaderboard_entries")
     .select(
-      "group_id, user_id, display_name, avatar_url, joined_at, total_points, base_points, bonus_points, exact_score_count, winner_count",
+      "group_id, user_id, display_name, avatar_url, gravatar_hash, joined_at, total_points, base_points, bonus_points, exact_score_count, winner_count",
     )
     .eq("group_id", groupId)
     .order("total_points", { ascending: false })
@@ -486,7 +495,10 @@ export async function getClosedMatchDetail(
   const memberIds = (memberships ?? []).map((membership) => membership.user_id);
   const { data: profiles } =
     memberIds.length > 0
-      ? await supabase.from("profiles").select("id, display_name, avatar_url").in("id", memberIds)
+      ? await supabase
+          .from("profiles")
+          .select("id, display_name, avatar_url, gravatar_hash")
+          .in("id", memberIds)
       : { data: [] };
   const profilesById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
   const members: RankingMember[] = (memberships ?? []).map((membership) => {
@@ -495,6 +507,7 @@ export async function getClosedMatchDetail(
       user_id: membership.user_id,
       display_name: profile?.display_name ?? null,
       avatar_url: profile?.avatar_url ?? null,
+      gravatar_hash: profile?.gravatar_hash ?? null,
       joined_at: membership.joined_at,
     };
   });

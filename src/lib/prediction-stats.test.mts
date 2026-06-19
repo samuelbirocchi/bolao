@@ -37,7 +37,7 @@ test("buildMatchPredictionStats sorts common scorelines by count", () => {
 test("buildMatchPredictionStats groups participants per scoreline and sorts by name", () => {
   const stats = buildMatchPredictionStats([
     { match_id: "m1", home_goals: 2, away_goals: 0, user_id: "u-a", display_name: "Alice", avatar_url: null },
-    { match_id: "m1", home_goals: 2, away_goals: 0, user_id: "u-b", display_name: "Bob", avatar_url: "https://example.com/b.png" },
+    { match_id: "m1", home_goals: 2, away_goals: 0, user_id: "u-b", display_name: "Bob", avatar_url: "https://example.com/b.png", gravatar_hash: "hash-b" },
     { match_id: "m1", home_goals: 2, away_goals: 0, user_id: "u-c", display_name: null, avatar_url: null },
     { match_id: "m1", home_goals: 1, away_goals: 0, user_id: "u-d", display_name: "Dana", avatar_url: null },
   ]);
@@ -56,6 +56,8 @@ test("buildMatchPredictionStats groups participants per scoreline and sorts by n
   assert.equal(top.participants[1]?.displayName, "Alice");
   assert.equal(top.participants[1]?.avatarUrl, null);
   assert.equal(top.participants[2]?.avatarUrl, "https://example.com/b.png");
+  assert.equal(top.participants[2]?.gravatarHash, "hash-b");
+  assert.equal(top.participants[1]?.gravatarHash, null);
 
   const other = scorelines[1]!;
   assert.equal(other.count, 1);

@@ -217,6 +217,7 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
                     <div className="leader-summary">
                       <span className="rank">{rank}</span>
                       <UserAvatar
+                        gravatarHash={entry.gravatar_hash}
                         name={entry.display_name}
                         seed={entry.user_id}
                         url={entry.avatar_url}

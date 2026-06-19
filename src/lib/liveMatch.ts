@@ -37,6 +37,7 @@ export type LiveMatchParticipant = {
   userId: string;
   displayName: string | null;
   avatarUrl: string | null;
+  gravatarHash: string | null;
   prediction: ScoreLine;
   points: number;
   criteria: LiveMatchCriterion[];
@@ -157,6 +158,7 @@ export function buildLiveMatchView({
         userId: prediction.user_id,
         displayName: member?.display_name ?? null,
         avatarUrl: member?.avatar_url ?? null,
+        gravatarHash: member?.gravatar_hash ?? null,
         prediction: { homeGoals: prediction.home_goals, awayGoals: prediction.away_goals },
         points: score?.points ?? 0,
         criteria: score ? scoreCriteria(score) : [],

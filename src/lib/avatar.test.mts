@@ -6,6 +6,7 @@ import {
   avatarObjectPath,
   avatarStoragePathFromPublicUrl,
   colorForSeed,
+  gravatarUrl,
   initialsFor,
   validateAvatarUrl,
 } from "./avatar.ts";
@@ -51,6 +52,24 @@ test("colorForSeed is deterministic and spreads across the palette", () => {
   }
 });
 
+
+test("gravatarUrl builds a 2x url with a 404 default", () => {
+  assert.equal(
+    gravatarUrl("abc123", 36),
+    "https://www.gravatar.com/avatar/abc123?s=72&d=404",
+  );
+  assert.equal(
+    gravatarUrl("  abc123  ", 48),
+    "https://www.gravatar.com/avatar/abc123?s=96&d=404",
+  );
+});
+
+test("gravatarUrl returns null for a blank hash", () => {
+  assert.equal(gravatarUrl(null), null);
+  assert.equal(gravatarUrl(undefined), null);
+  assert.equal(gravatarUrl(""), null);
+  assert.equal(gravatarUrl("   "), null);
+});
 
 test("avatarObjectPath gives each upload a unique object path", () => {
   assert.equal(avatarObjectPath("user-id", "image/png", "one"), "user-id/avatar-one.png");
