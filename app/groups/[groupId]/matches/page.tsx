@@ -304,6 +304,7 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
                                       key={participant.userId}
                                     >
                                       <UserAvatar
+                                        gravatarHash={participant.gravatarHash}
                                         name={participant.displayName}
                                         seed={participant.userId}
                                         size={24}

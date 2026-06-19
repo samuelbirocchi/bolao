@@ -2,6 +2,7 @@ export type ScorelineParticipant = {
   userId: string;
   displayName: string | null;
   avatarUrl: string | null;
+  gravatarHash: string | null;
 };
 
 export type PredictionStatsInput = {
@@ -11,6 +12,7 @@ export type PredictionStatsInput = {
   user_id?: string;
   display_name?: string | null;
   avatar_url?: string | null;
+  gravatar_hash?: string | null;
 };
 
 export type PredictionOutcomeStats = {
@@ -89,6 +91,7 @@ export function buildMatchPredictionStats(
         userId: prediction.user_id,
         displayName: prediction.display_name ?? null,
         avatarUrl: prediction.avatar_url ?? null,
+        gravatarHash: prediction.gravatar_hash ?? null,
       });
     }
   }

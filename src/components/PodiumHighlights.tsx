@@ -33,6 +33,7 @@ function PodiumBand({
           <div className="podium-slot" key={entry.user_id}>
             <span className="rank">{rank}</span>
             <UserAvatar
+              gravatarHash={entry.gravatar_hash}
               name={entry.display_name}
               seed={entry.user_id}
               size={48}

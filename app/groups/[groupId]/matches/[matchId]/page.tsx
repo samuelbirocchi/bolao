@@ -254,6 +254,7 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
                     <td>
                       <span className="live-pick-player">
                         <UserAvatar
+                          gravatarHash={participant.gravatarHash}
                           name={participant.displayName}
                           seed={participant.userId}
                           size={30}

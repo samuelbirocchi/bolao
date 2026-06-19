@@ -10,6 +10,7 @@ function makeRanked(count: number): RankedEntry[] {
       user_id: `u${i + 1}`,
       display_name: `Player ${i + 1}`,
       avatar_url: null,
+      gravatar_hash: null,
       joined_at: "2026-01-01T00:00:00Z",
       total_points: 100 - i,
       base_points: 0,

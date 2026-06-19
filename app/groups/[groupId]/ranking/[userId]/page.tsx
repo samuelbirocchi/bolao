@@ -191,6 +191,7 @@ export default async function PlayerDetailPage({ params }: PlayerDetailPageProps
         <div className="ranking-current-body">
           <span className="rank">{currentStanding.rank}</span>
           <UserAvatar
+            gravatarHash={playerMember.gravatar_hash}
             name={playerMember.display_name}
             seed={userId}
             url={playerMember.avatar_url}

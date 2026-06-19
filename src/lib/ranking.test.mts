@@ -11,18 +11,21 @@ const alice: RankingMember = {
   user_id: "alice",
   display_name: "Alice",
   avatar_url: null,
+  gravatar_hash: null,
   joined_at: "2026-01-01T00:00:00Z",
 };
 const bob: RankingMember = {
   user_id: "bob",
   display_name: "Bob",
   avatar_url: null,
+  gravatar_hash: null,
   joined_at: "2026-01-02T00:00:00Z",
 };
 const carol: RankingMember = {
   user_id: "carol",
   display_name: "Carol",
   avatar_url: null,
+  gravatar_hash: null,
   joined_at: "2026-01-03T00:00:00Z",
 };
 

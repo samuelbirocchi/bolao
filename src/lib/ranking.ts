@@ -41,6 +41,7 @@ export type RankingMember = {
   user_id: string;
   display_name: string | null;
   avatar_url: string | null;
+  gravatar_hash: string | null;
   joined_at: string;
 };
 
