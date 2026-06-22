@@ -910,6 +910,66 @@ label {
   padding-top: 0.85rem;
 }
 
+.live-matches {
+  display: grid;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.live-matches-heading {
+  align-items: center;
+  display: flex;
+  gap: 0.55rem;
+  color: var(--danger);
+  font-weight: 950;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.live-indicator {
+  background: var(--danger);
+  border-radius: 999px;
+  display: inline-block;
+  height: 0.6rem;
+  width: 0.6rem;
+  animation: live-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.8); }
+}
+
+.live-matches-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.live-badge {
+  background: var(--danger);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  padding: 0.18rem 0.5rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.match-card-live {
+  border-color: rgba(175, 47, 47, 0.4);
+  box-shadow: 0 0 0 3px rgba(175, 47, 47, 0.08), var(--shadow-soft);
+}
+
+.row-end {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
 .past-matches {
   display: grid;
   gap: 0.8rem;

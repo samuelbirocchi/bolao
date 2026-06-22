@@ -14,6 +14,7 @@ import { hasSaveFeedback } from "@/lib/saveFeedback";
 import {
   getLocalDateKey,
   groupUpcomingByDate,
+  isMatchLive,
   isMatchLocked,
   splitMatchesByKickoff,
 } from "@/lib/matches";
@@ -115,7 +116,7 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
   const unlockedMatchIds = matches
     .filter((match) => !isMatchLocked(match.kickoff_utc, now))
     .map((match) => match.id);
-  const { pastMatches, upcomingMatches } = splitMatchesByKickoff(matches, now);
+  const { liveMatches, pastMatches, upcomingMatches } = splitMatchesByKickoff(matches, now);
   // SSR can't know each viewer's timezone, so group by the app timezone for
   // deterministic bucketing; LocalKickoff renders per-user times client-side.
   const dateGroups = groupUpcomingByDate(upcomingMatches, APP_TIMEZONE, locale);
@@ -123,6 +124,7 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
 
   const renderMatchCard = (match: (typeof matches)[number]) => {
     const locked = isMatchLocked(match.kickoff_utc, now);
+    const live = isMatchLive(match, now);
     const homeName = displayName(
       match.home_team_name,
       match.home_team_placeholder ?? t.matches.fallbackTeam,
@@ -177,7 +179,9 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
     return (
       <article
         className={
-          locked ? "match-card match-card-clickable match-card-past" : "match-card"
+          locked
+            ? `match-card match-card-clickable match-card-past${live ? " match-card-live" : ""}`
+            : "match-card"
         }
         key={match.id}
       >
@@ -194,8 +198,11 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
           <span className="muted">
             {t.matches.match} {match.match_number} · {match.group_name ?? match.round}
           </span>
-          <span className="muted">
-            <LocalKickoff iso={match.kickoff_utc} locale={locale} />
+          <span className="row-end">
+            {live ? <span className="live-badge">{t.matches.liveMatchBadge}</span> : null}
+            <span className="muted">
+              <LocalKickoff iso={match.kickoff_utc} locale={locale} />
+            </span>
           </span>
         </div>
 
@@ -457,6 +464,15 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
           <input name="matchIds" type="hidden" value={unlockedMatchIds.join(",")} />
 
           <section className="match-list">
+            {liveMatches.length > 0 ? (
+              <section className="live-matches" aria-label={t.matches.liveMatches}>
+                <h2 className="live-matches-heading">
+                  <span className="live-indicator" aria-hidden="true" />
+                  {t.matches.liveMatches}
+                </h2>
+                <div className="live-matches-list">{liveMatches.map(renderMatchCard)}</div>
+              </section>
+            ) : null}
             {pastMatches.length > 0 ? (
               <details className="past-matches">
                 <summary>
