@@ -3,7 +3,9 @@ import { test } from "node:test";
 import {
   getLocalDateKey,
   groupUpcomingByDate,
+  isMatchLive,
   isMatchLocked,
+  LIVE_WINDOW_MS,
   splitMatchesByKickoff,
 } from "./matches.ts";
 
@@ -20,19 +22,74 @@ test("isMatchLocked treats the exact kickoff moment as locked (boundary is inclu
   assert.equal(isMatchLocked("2026-06-11T16:00:00.000Z", now), true);
 });
 
+test("isMatchLive is true for a kicked-off match with no result within the window", () => {
+  const kickoff = new Date("2026-06-11T16:00:00.000Z");
+  const now = kickoff.getTime() + 30 * 60 * 1000;
+
+  assert.equal(
+    isMatchLive(
+      { kickoff_utc: kickoff.toISOString(), result_home_goals: null },
+      now,
+    ),
+    true,
+  );
+});
+
+test("isMatchLive is false for a match that has not kicked off", () => {
+  const now = new Date("2026-06-11T16:00:00.000Z").getTime();
+
+  assert.equal(
+    isMatchLive(
+      { kickoff_utc: "2026-06-11T20:00:00.000Z", result_home_goals: null },
+      now,
+    ),
+    false,
+  );
+});
+
+test("isMatchLive is false once a result has been synced", () => {
+  const kickoff = new Date("2026-06-11T16:00:00.000Z");
+  const now = kickoff.getTime() + 30 * 60 * 1000;
+
+  assert.equal(
+    isMatchLive(
+      { kickoff_utc: kickoff.toISOString(), result_home_goals: 2 },
+      now,
+    ),
+    false,
+  );
+});
+
+test("isMatchLive is false after LIVE_WINDOW_MS elapses without a result", () => {
+  const kickoff = new Date("2026-06-11T16:00:00.000Z");
+  const now = kickoff.getTime() + LIVE_WINDOW_MS;
+
+  assert.equal(
+    isMatchLive(
+      { kickoff_utc: kickoff.toISOString(), result_home_goals: null },
+      now,
+    ),
+    false,
+  );
+});
+
 test("splitMatchesByKickoff groups started matches separately from upcoming matches", () => {
   const now = new Date("2026-06-11T16:00:00.000Z").getTime();
   const matches = [
-    { id: "earlier-today", kickoff_utc: "2026-06-11T12:00:00.000Z" },
-    { id: "starting-now", kickoff_utc: "2026-06-11T16:00:00.000Z" },
-    { id: "later-today", kickoff_utc: "2026-06-11T20:00:00.000Z" },
+    { id: "earlier-today", kickoff_utc: "2026-06-11T12:00:00.000Z", result_home_goals: 1 },
+    { id: "starting-now", kickoff_utc: "2026-06-11T16:00:00.000Z", result_home_goals: null },
+    { id: "later-today", kickoff_utc: "2026-06-11T20:00:00.000Z", result_home_goals: null },
   ];
 
   const grouped = splitMatchesByKickoff(matches, now);
 
   assert.deepEqual(
+    grouped.liveMatches.map((match) => match.id),
+    ["starting-now"],
+  );
+  assert.deepEqual(
     grouped.pastMatches.map((match) => match.id),
-    ["starting-now", "earlier-today"],
+    ["earlier-today"],
   );
   assert.deepEqual(
     grouped.upcomingMatches.map((match) => match.id),
@@ -43,15 +100,19 @@ test("splitMatchesByKickoff groups started matches separately from upcoming matc
 test("splitMatchesByKickoff sorts past matches by kickoff descending (newest first)", () => {
   const now = new Date("2026-06-14T12:00:00.000Z").getTime();
   const matches = [
-    { id: "day1", kickoff_utc: "2026-06-10T20:00:00.000Z" },
-    { id: "day2", kickoff_utc: "2026-06-11T16:00:00.000Z" },
-    { id: "day3", kickoff_utc: "2026-06-12T20:00:00.000Z" },
-    { id: "day4", kickoff_utc: "2026-06-13T16:00:00.000Z" },
-    { id: "day5", kickoff_utc: "2026-06-14T20:00:00.000Z" },
+    { id: "day1", kickoff_utc: "2026-06-10T20:00:00.000Z", result_home_goals: 0 },
+    { id: "day2", kickoff_utc: "2026-06-11T16:00:00.000Z", result_home_goals: 1 },
+    { id: "day3", kickoff_utc: "2026-06-12T20:00:00.000Z", result_home_goals: 2 },
+    { id: "day4", kickoff_utc: "2026-06-13T16:00:00.000Z", result_home_goals: 3 },
+    { id: "day5", kickoff_utc: "2026-06-14T20:00:00.000Z", result_home_goals: null },
   ];
 
   const grouped = splitMatchesByKickoff(matches, now);
 
+  assert.deepEqual(
+    grouped.liveMatches.map((match) => match.id),
+    [],
+  );
   assert.deepEqual(
     grouped.pastMatches.map((match) => match.id),
     ["day4", "day3", "day2", "day1"],
@@ -59,6 +120,27 @@ test("splitMatchesByKickoff sorts past matches by kickoff descending (newest fir
   assert.deepEqual(
     grouped.upcomingMatches.map((match) => match.id),
     ["day5"],
+  );
+});
+
+test("splitMatchesByKickoff puts result-less matches within the live window into liveMatches (issue #73)", () => {
+  const now = new Date("2026-06-11T17:00:00.000Z").getTime();
+  const matches = [
+    { id: "just-started", kickoff_utc: "2026-06-11T16:30:00.000Z", result_home_goals: null },
+    { id: "still-live", kickoff_utc: "2026-06-11T15:30:00.000Z", result_home_goals: null },
+    { id: "resolved", kickoff_utc: "2026-06-11T15:30:00.000Z", result_home_goals: 1 },
+    { id: "expired", kickoff_utc: "2026-06-11T14:30:00.000Z", result_home_goals: null },
+  ];
+
+  const grouped = splitMatchesByKickoff(matches, now);
+
+  assert.deepEqual(
+    grouped.liveMatches.map((match) => match.id),
+    ["still-live", "just-started"],
+  );
+  assert.deepEqual(
+    grouped.pastMatches.map((match) => match.id),
+    ["resolved", "expired"],
   );
 });
 
