@@ -313,6 +313,7 @@ label {
 .page {
   margin: 0 auto;
   max-width: 1180px;
+  min-width: 0;
   padding: clamp(1rem, 4vw, 2.25rem);
   width: 100%;
 }
@@ -1434,6 +1435,8 @@ label {
 }
 
 .live-picks-card {
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
 }
 
