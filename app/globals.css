@@ -1978,6 +1978,12 @@ label {
 
 @media (max-width: 640px) {
   .podium-slots {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+
+  .podium-slot {
+    flex: 1 1 calc(50% - 0.7rem);
+    min-width: calc(50% - 0.7rem);
   }
 }
