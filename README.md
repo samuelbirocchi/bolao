@@ -68,13 +68,13 @@ PWA-first World Cup sweepstakes app for private groups of friends.
    - Request a key from `https://www.wc2026api.com/`
    - Set `WC2026_API_KEY`
    - Use `/admin/matches` to sync matches, phases, extra-time state, and penalties
-   - For automatic post-match sync, also set `SUPABASE_SERVICE_ROLE_KEY` and
-     `CRON_SECRET`; the checked-in Vercel Hobby schedule calls
-     `/api/cron/sync-matches` daily and sends `CRON_SECRET` as the bearer token.
-     On Vercel Pro, change `vercel.json` to `*/30 * * * *` for a 30-minute cadence.
-   - If `ODDS_API_KEY` is also set, the daily cron automatically syncs pre-kickoff
-     odds alongside match results. Odds can also be synced manually from
-     `/admin/matches`.
+   - For automatic post-match sync, also set `SUPABASE_SERVICE_ROLE_KEY`; the
+     service starts an in-process scheduler that syncs every 15 minutes.
+   - Set `CRON_SECRET` only if you want to protect the manual
+     `/api/cron/sync-matches` endpoint for external invocations.
+   - If `ODDS_API_KEY` is also set, the scheduler automatically syncs
+     pre-kickoff odds alongside match results. Odds can also be synced manually
+     from `/admin/matches`.
 
 7. Optional odds-only config:
 
@@ -98,7 +98,7 @@ Optional:
 
 - `NEXT_PUBLIC_SITE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `CRON_SECRET`
+- `CRON_SECRET` (manual `/api/cron/sync-matches` endpoint only)
 - `WC2026_API_KEY`
 - `WC2026_API_BASE_URL`
 - `ODDS_API_KEY`

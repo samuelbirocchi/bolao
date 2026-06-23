@@ -40,12 +40,12 @@ production emails do not accidentally inherit a local development origin. Becaus
 `NEXT_PUBLIC_*` values are embedded at build time, redeploy after changing either
 public variable.
 
-`SUPABASE_SERVICE_ROLE_KEY` is only used by the server-side cron route so it can
-write match fixtures, final results, and odds snapshots without an interactive
-admin session. Keep it secret and never expose it with a `NEXT_PUBLIC_` prefix.
-`CRON_SECRET` secures Vercel cron invocations; Vercel sends it as the
-`Authorization: Bearer` header when calling `/api/cron/sync-matches`. If
-`ODDS_API_KEY` is also set, the same cron automatically syncs pre-kickoff odds.
+`SUPABASE_SERVICE_ROLE_KEY` is used by the service-side scheduler and manual
+cron route so they can write match fixtures, final results, and odds snapshots
+without an interactive admin session. Keep it secret and never expose it with a
+`NEXT_PUBLIC_` prefix. `CRON_SECRET` only protects the manual
+`/api/cron/sync-matches` endpoint for external invocations. If `ODDS_API_KEY` is
+also set, the service-side scheduler automatically syncs pre-kickoff odds.
 
 ## Preview environment variables
 
@@ -104,10 +104,9 @@ After deployment, open the production URL and verify:
 - Group list and individual group pages load.
 - Admin pages load for the promoted global admin user.
 - WC2026 sync runs from `/admin/matches`.
-- Post-match WC2026 sync runs from `/api/cron/sync-matches` when called with
+- Post-match WC2026 sync runs every 15 minutes from the service-side scheduler.
+- The manual cron endpoint runs from `/api/cron/sync-matches` when called with
   `Authorization: Bearer <CRON_SECRET>`.
-- `vercel.json` uses a daily cron schedule so Hobby deployments pass. On Vercel
-  Pro, change the schedule to `*/30 * * * *` for a 30-minute post-match cadence.
 - Odds sync runs from `/admin/matches`.
 
 ## Supabase assumptions
