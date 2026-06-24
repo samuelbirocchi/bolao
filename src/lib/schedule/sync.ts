@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildOddsSnapshots, fetchWorldCupOdds, type OddsSyncResult } from "@/lib/odds";
 import { selectPostMatchSyncCandidates } from "./postmatch";
+import { buildCompletedResultRows, buildMatchRows } from "./syncRows";
 import type { ExternalMatch } from "./types";
 import { fetchWc2026Matches } from "./wc2026";
 import { createClient, createServiceClient, hasSupabaseEnv, hasSupabaseServiceEnv } from "@/lib/supabase/server";
@@ -14,46 +15,6 @@ export type Wc2026SyncSummary = {
   syncedMatchCount: number;
   syncedResultCount: number;
 };
-
-export function buildMatchRows(externalMatches: ExternalMatch[]) {
-  return externalMatches.map((match) => ({
-    match_number: match.matchNumber,
-    round: match.round,
-    group_name: match.groupName,
-    home_team_name: match.homeTeamName ?? match.homeTeamPlaceholder ?? "TBD",
-    away_team_name: match.awayTeamName ?? match.awayTeamPlaceholder ?? "TBD",
-    home_team_placeholder: match.homeTeamPlaceholder,
-    away_team_placeholder: match.awayTeamPlaceholder,
-    stadium: match.stadium,
-    kickoff_utc: match.kickoffUtc,
-    status: match.status,
-    phase: match.phase,
-  }));
-}
-
-export function buildCompletedResultRows(
-  externalMatches: ExternalMatch[],
-  matchIdByNumber: Map<number, string>,
-  updatedBy: string | null,
-) {
-  return externalMatches
-    .filter((match) => match.resultHomeGoals !== null && match.resultAwayGoals !== null)
-    .map((match) => ({
-      match_id: matchIdByNumber.get(match.matchNumber),
-      home_goals: match.resultHomeGoals!,
-      away_goals: match.resultAwayGoals!,
-      home_penalties:
-        match.resultResolution === "penalties" ? match.resultHomePenalties : null,
-      away_penalties:
-        match.resultResolution === "penalties" ? match.resultAwayPenalties : null,
-      resolution: match.resultResolution,
-      updated_by: updatedBy,
-      updated_at: new Date().toISOString(),
-    }))
-    .filter((result): result is Omit<typeof result, "match_id"> & { match_id: string } =>
-      Boolean(result.match_id),
-    );
-}
 
 export async function syncExternalMatches(
   supabase: SyncSupabaseClient,
