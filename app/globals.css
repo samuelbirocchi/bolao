@@ -963,6 +963,18 @@ label {
   box-shadow: 0 0 0 3px rgba(175, 47, 47, 0.08), var(--shadow-soft);
 }
 
+.knockout-badge {
+  background: var(--accent);
+  border-radius: 999px;
+  color: var(--brand-strong);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  padding: 0.18rem 0.5rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .row-end {
   align-items: center;
   display: inline-flex;

@@ -191,6 +191,48 @@ test("knockout matches double the whole score (base + bonuses)", () => {
   assert.equal(knockout.points, knockout.basePoints + knockout.bonusPoints);
 });
 
+test("knockout base-points preview formula matches awarded base points", () => {
+  // The bet page previews calculateBasePoints(prob) * knockoutMultiplier per
+  // outcome. That formula must equal what a knockout match actually awards,
+  // including the doubled minimum used when no odds were synced.
+  const prediction = { homeGoals: 2, awayGoals: 0 };
+  const result = { homeGoals: 2, awayGoals: 0, resolution: "regular" as const };
+  const probabilities = {
+    homeWinProbability: 0.5,
+    drawProbability: 0.25,
+    awayWinProbability: 0.25,
+  };
+
+  const withOdds = calculatePredictionScore(
+    prediction,
+    result,
+    defaultScoreWeights,
+    probabilities,
+    true,
+  );
+  assert.equal(
+    withOdds.basePoints,
+    calculateBasePoints(probabilities.homeWinProbability, defaultScoreWeights) *
+      defaultScoreWeights.knockoutMultiplier,
+  );
+
+  const withoutOdds = calculatePredictionScore(
+    prediction,
+    result,
+    defaultScoreWeights,
+    null,
+    true,
+  );
+  assert.equal(
+    withoutOdds.basePoints,
+    calculateBasePoints(null, defaultScoreWeights) * defaultScoreWeights.knockoutMultiplier,
+  );
+  assert.equal(
+    withoutOdds.basePoints,
+    defaultScoreWeights.baseMinPoints * defaultScoreWeights.knockoutMultiplier,
+  );
+});
+
 test("knockout multiplier is configurable and a multiplier of 1 is a no-op", () => {
   const prediction = { homeGoals: 2, awayGoals: 1 };
   const result = { homeGoals: 2, awayGoals: 1, resolution: "regular" as const };

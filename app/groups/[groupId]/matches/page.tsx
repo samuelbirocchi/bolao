@@ -60,13 +60,17 @@ function buildVictoryPointCopy(
     points: string;
     tooltip: string;
   },
+  multiplier = 1,
 ) {
-  const points = calculateBasePoints(probability, weights);
+  // Knockout matches award a configurable multiple of points, so scale the
+  // previewed value and the floor/ceiling range to match what is actually
+  // awarded (see calculatePredictionScore's knockoutMultiplier handling).
+  const points = calculateBasePoints(probability, weights) * multiplier;
   const values = {
     ceiling: formatProbability(weights.baseCeilingProbability),
     floor: formatProbability(weights.baseFloorProbability),
-    maxPoints: String(weights.baseMaxPoints),
-    minPoints: String(weights.baseMinPoints),
+    maxPoints: String(weights.baseMaxPoints * multiplier),
+    minPoints: String(weights.baseMinPoints * multiplier),
     points: String(points),
     probability: formatProbability(probability),
     team: teamName,
@@ -157,23 +161,32 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
         ]
       : [];
     const commonScorelines = predictionStats?.scorelines.slice(0, 5) ?? [];
+    const knockout = isKnockoutMatch(match.match_number);
+    const pointsMultiplier = knockout ? scoring.knockoutMultiplier : 1;
+    const knockoutBadge =
+      knockout && pointsMultiplier > 1
+        ? fillTemplate(t.matches.doublePoints, { multiplier: String(pointsMultiplier) })
+        : null;
     const homeVictoryPoints = buildVictoryPointCopy(
       homeName,
       match.odds_home_win_probability,
       scoring,
       t.matches.victoryPoints,
+      pointsMultiplier,
     );
     const awayVictoryPoints = buildVictoryPointCopy(
       awayName,
       match.odds_away_win_probability,
       scoring,
       t.matches.victoryPoints,
+      pointsMultiplier,
     );
     const drawVictoryPoints = buildVictoryPointCopy(
       t.matches.draw,
       match.odds_draw_probability,
       scoring,
       t.matches.victoryPoints.drawPoints,
+      pointsMultiplier,
     );
 
     return (
@@ -200,6 +213,7 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
           </span>
           <span className="row-end">
             {live ? <span className="live-badge">{t.matches.liveMatchBadge}</span> : null}
+            {knockoutBadge ? <span className="knockout-badge">{knockoutBadge}</span> : null}
             <span className="muted">
               <LocalKickoff iso={match.kickoff_utc} locale={locale} />
             </span>
