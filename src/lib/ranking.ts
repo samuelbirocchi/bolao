@@ -25,6 +25,7 @@ export type RankingScore = {
   correct_draw: boolean;
   // Enrichment fields (match_prediction_scores, migration 008). Optional so the
   // live-match view can keep constructing scores without the per-match detail.
+  is_knockout?: boolean;
   prediction_home_goals?: number | null;
   prediction_away_goals?: number | null;
   result_home_goals?: number | null;
@@ -72,6 +73,7 @@ export type MemberSeries = {
 export type PerMatchEntry = {
   userId: string;
   matchPoints: number;
+  isKnockout: boolean;
   exact: boolean;
   correctWinner: boolean;
   correctDraw: boolean;
@@ -283,6 +285,7 @@ export function buildRanking(
       return {
         userId: entry.userId,
         matchPoints: score ? score.base_points + score.bonus_points : 0,
+        isKnockout: score?.is_knockout ?? false,
         exact: score?.exact_score ?? false,
         correctWinner: score?.correct_winner ?? false,
         correctDraw: score?.correct_draw ?? false,

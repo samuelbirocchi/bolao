@@ -143,6 +143,20 @@ export default async function AdminScoringPage() {
           </label>
         </div>
 
+        <h2>{t.adminScoring.knockout}</h2>
+        <div className="grid two">
+          <label>
+            {t.adminScoring.knockoutMultiplier}
+            <input
+              defaultValue={scoring.knockoutMultiplier}
+              min={1}
+              name="knockoutMultiplier"
+              required
+              type="number"
+            />
+          </label>
+        </div>
+
         <button type="submit">{t.adminScoring.submit}</button>
       </form>
     </main>

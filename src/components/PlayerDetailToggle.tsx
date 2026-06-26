@@ -8,6 +8,7 @@ export type PlayerMatchEntry = {
   matchId: string;
   label: string;
   matchPoints: number;
+  isKnockout: boolean;
   rank: number;
   rankDelta: number;
   predictionHomeGoals: number | null;
@@ -48,6 +49,7 @@ type PlayerDetailToggleProps = {
   criteriaLabels: Record<LiveMatchCriterion, string>;
   versusLabel: string;
   noCriteriaLabel: string;
+  knockoutBadgeLabel: string;
 };
 
 // Mirrors scoreCriteria order in liveMatch.ts so badges read consistently with
@@ -106,6 +108,7 @@ export function PlayerDetailToggle({
   criteriaLabels,
   versusLabel,
   noCriteriaLabel,
+  knockoutBadgeLabel,
 }: PlayerDetailToggleProps) {
   const [mode, setMode] = useState<"match" | "day" | "points">("match");
 
@@ -165,66 +168,108 @@ export function PlayerDetailToggle({
       )}
 
       {mode === "points" &&
-        (perMatchEntries.length > 0 ? (
-          <div className="player-points-scroll">
-            <table className="ranking-table">
-              <thead>
-                <tr>
-                  <th>{tableMatchHeader}</th>
-                  <th>{tablePredictionHeader}</th>
-                  <th>{tablePointsHeader}</th>
-                  <th>{tableCriteriaHeader}</th>
-                  <th>{tableRankHeader}</th>
-                  <th>{tableChangeHeader}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {perMatchEntries.map((entry) => {
-                  const result = scoreline(
-                    entry.resultHomeGoals,
-                    entry.resultAwayGoals,
-                    versusLabel,
-                  );
-                  const pick = scoreline(
-                    entry.predictionHomeGoals,
-                    entry.predictionAwayGoals,
-                    versusLabel,
-                  );
-                  const criteria = firedCriteria(entry);
-                  return (
-                    <tr key={entry.matchId}>
-                      <td>
-                        <span className="player-points-match">{entry.label}</span>
+        (perMatchEntries.length > 0
+          ? (() => {
+              const rows = perMatchEntries.map((entry) => ({
+                entry,
+                result: scoreline(entry.resultHomeGoals, entry.resultAwayGoals, versusLabel),
+                pick: scoreline(entry.predictionHomeGoals, entry.predictionAwayGoals, versusLabel),
+                criteria: firedCriteria(entry),
+              }));
+
+              const knockoutBadge = (entry: PlayerMatchEntry) =>
+                entry.isKnockout ? (
+                  <span className="criterion-pill knockout-pill">{knockoutBadgeLabel}</span>
+                ) : null;
+
+              const criteriaCell = (criteria: LiveMatchCriterion[]) =>
+                criteria.length > 0 ? (
+                  <span className="criteria-list">
+                    {criteria.map((criterion) => (
+                      <span className="criterion-pill" key={criterion}>
+                        {criteriaLabels[criterion]}
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  <span className="muted">{noCriteriaLabel}</span>
+                );
+
+              return (
+                <>
+                  {/* Mobile: stacked cards (the 6-column table overflows on phones). */}
+                  <ul className="player-points-cards">
+                    {rows.map(({ entry, result, pick, criteria }) => (
+                      <li className="player-points-card" key={entry.matchId}>
+                        <div className="ppc-head">
+                          <span className="player-points-match">{entry.label}</span>
+                          {knockoutBadge(entry)}
+                        </div>
                         {result ? (
                           <span className="player-points-result">{result}</span>
                         ) : null}
-                      </td>
-                      <td>{pick ?? "–"}</td>
-                      <td>{entry.matchPoints}</td>
-                      <td>
-                        {criteria.length > 0 ? (
-                          <span className="criteria-list">
-                            {criteria.map((criterion) => (
-                              <span className="criterion-pill" key={criterion}>
-                                {criteriaLabels[criterion]}
-                              </span>
-                            ))}
-                          </span>
-                        ) : (
-                          <span className="muted">{noCriteriaLabel}</span>
-                        )}
-                      </td>
-                      <td>{entry.rank}</td>
-                      <td>{rankDelta(entry.rankDelta)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="empty">{emptyLabel}</div>
-        ))}
+                        <dl className="ppc-stats">
+                          <div>
+                            <dt>{tablePredictionHeader}</dt>
+                            <dd>{pick ?? "–"}</dd>
+                          </div>
+                          <div>
+                            <dt>{tablePointsHeader}</dt>
+                            <dd>{entry.matchPoints}</dd>
+                          </div>
+                          <div>
+                            <dt>{tableRankHeader}</dt>
+                            <dd>{entry.rank}</dd>
+                          </div>
+                          <div>
+                            <dt>{tableChangeHeader}</dt>
+                            <dd>{rankDelta(entry.rankDelta)}</dd>
+                          </div>
+                        </dl>
+                        <div className="ppc-criteria">{criteriaCell(criteria)}</div>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* Wider viewports: the original table. */}
+                  <div className="player-points-scroll">
+                    <table className="ranking-table">
+                      <thead>
+                        <tr>
+                          <th>{tableMatchHeader}</th>
+                          <th>{tablePredictionHeader}</th>
+                          <th>{tablePointsHeader}</th>
+                          <th>{tableCriteriaHeader}</th>
+                          <th>{tableRankHeader}</th>
+                          <th>{tableChangeHeader}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map(({ entry, result, pick, criteria }) => (
+                          <tr key={entry.matchId}>
+                            <td>
+                              <span className="player-points-match">{entry.label}</span>
+                              {knockoutBadge(entry)}
+                              {result ? (
+                                <span className="player-points-result">{result}</span>
+                              ) : null}
+                            </td>
+                            <td>{pick ?? "–"}</td>
+                            <td>{entry.matchPoints}</td>
+                            <td>{criteriaCell(criteria)}</td>
+                            <td>{entry.rank}</td>
+                            <td>{rankDelta(entry.rankDelta)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              );
+            })()
+          : (
+            <div className="empty">{emptyLabel}</div>
+          ))}
     </div>
   );
 }

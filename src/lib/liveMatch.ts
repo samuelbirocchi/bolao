@@ -1,7 +1,9 @@
 import {
   calculatePredictionScore,
+  isKnockoutMatch,
   type MatchResolution,
   type OutcomeProbabilities,
+  type OutcomeSide,
   type PredictionScore,
   type ResultScoreLine,
   type ScoreLine,
@@ -20,6 +22,7 @@ export type LiveMatchPredictionInput = {
   user_id: string;
   home_goals: number;
   away_goals: number;
+  penalty_winner?: OutcomeSide | null;
 };
 
 export type LiveMatchCriterion =
@@ -113,13 +116,19 @@ export function buildLiveMatchView({
   const preMatchRanks = ranksByUser(
     buildRanking(previousMatches, previousScores, members).currentStandings,
   );
+  const knockout = isKnockoutMatch(currentMatch.match_number);
   const partialScores: RankingScore[] = result
     ? predictions.map((prediction) => {
         const score = calculatePredictionScore(
-          { homeGoals: prediction.home_goals, awayGoals: prediction.away_goals },
+          {
+            homeGoals: prediction.home_goals,
+            awayGoals: prediction.away_goals,
+            penaltyWinner: prediction.penalty_winner ?? null,
+          },
           result,
           weights,
           probabilities,
+          knockout,
         );
         return {
           user_id: prediction.user_id,
@@ -145,10 +154,15 @@ export function buildLiveMatchView({
     .map<LiveMatchParticipant>((prediction) => {
       const score = result
         ? calculatePredictionScore(
-            { homeGoals: prediction.home_goals, awayGoals: prediction.away_goals },
+            {
+              homeGoals: prediction.home_goals,
+              awayGoals: prediction.away_goals,
+              penaltyWinner: prediction.penalty_winner ?? null,
+            },
             result,
             weights,
             probabilities,
+            knockout,
           )
         : null;
       const member = membersById.get(prediction.user_id);

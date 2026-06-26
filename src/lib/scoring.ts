@@ -1,3 +1,11 @@
+// WC2026 has 72 group-stage matches; knockout matches start at match number 73.
+// The SQL scoring view (migration 011) hardcodes 73 to mirror this constant.
+export const KNOCKOUT_START_MATCH_NUMBER = 73;
+
+export function isKnockoutMatch(matchNumber: number): boolean {
+  return matchNumber >= KNOCKOUT_START_MATCH_NUMBER;
+}
+
 export type ScoreWeights = {
   baseMinPoints: number;
   baseMaxPoints: number;
@@ -10,6 +18,7 @@ export type ScoreWeights = {
   routBonusPoints: number;
   extraTimeBonusPoints: number;
   penaltiesBonusPoints: number;
+  knockoutMultiplier: number;
 };
 
 export type ScoreLine = {
@@ -26,6 +35,12 @@ export type ResultScoreLine = ScoreLine & {
 };
 
 export type OutcomeSide = "home" | "away";
+
+export type PredictionLine = ScoreLine & {
+  // Shootout pick for a draw prediction on a knockout match. Gates the
+  // penalties bonus; ignored when the prediction is not a draw.
+  penaltyWinner?: OutcomeSide | null;
+};
 
 export type OutcomeProbabilities = {
   homeWinProbability: number | null;
@@ -63,6 +78,7 @@ export const defaultScoreWeights: ScoreWeights = {
   routBonusPoints: 1,
   extraTimeBonusPoints: 3,
   penaltiesBonusPoints: 3,
+  knockoutMultiplier: 2,
 };
 
 function scoreWinner(score: ScoreLine): OutcomeSide | null {
@@ -77,9 +93,17 @@ function scoreWinner(score: ScoreLine): OutcomeSide | null {
   return null;
 }
 
+// The match's win/draw outcome is judged purely on the goals scored (including
+// extra time). A knockout match decided on penalties is level on goals, so it
+// counts as a DRAW; the shootout winner is a separate sub-prediction (see
+// penaltyShootoutWinner) that only gates the penalties bonus.
 export function resultWinner(result: ResultScoreLine): OutcomeSide | null {
+  return scoreWinner(result);
+}
+
+// The team that won the penalty shootout, or null when no shootout was recorded.
+export function penaltyShootoutWinner(result: ResultScoreLine): OutcomeSide | null {
   if (
-    result.resolution === "penalties" &&
     result.homePenalties !== null &&
     result.homePenalties !== undefined &&
     result.awayPenalties !== null &&
@@ -91,7 +115,7 @@ export function resultWinner(result: ResultScoreLine): OutcomeSide | null {
     });
   }
 
-  return scoreWinner(result);
+  return null;
 }
 
 function goalsForSide(score: ScoreLine, side: OutcomeSide) {
@@ -139,10 +163,11 @@ function probabilityForWinner(
 }
 
 export function calculatePredictionScore(
-  prediction: ScoreLine,
+  prediction: PredictionLine,
   result: ResultScoreLine,
   weights: ScoreWeights,
   probabilities?: OutcomeProbabilities | null,
+  isKnockout = false,
 ): PredictionScore {
   const exactScore =
     prediction.homeGoals === result.homeGoals && prediction.awayGoals === result.awayGoals;
@@ -179,9 +204,18 @@ export function calculatePredictionScore(
     goalsForSide(prediction, predictedWinner) >= 4 &&
     goalsForSide(result, predictedWinner) >= 4;
   const extraTime = (correctWinner || correctDraw) && result.resolution === "extra_time";
-  const penalties = (correctWinner || correctDraw) && result.resolution === "penalties";
+  // A penalty shootout decides a match that was level on goals, so the goal
+  // outcome is a draw. The penalties bonus is earned by correctly predicting the
+  // draw AND picking the team that won the shootout.
+  const shootoutWinner = penaltyShootoutWinner(result);
+  const penalties =
+    result.resolution === "penalties" &&
+    correctDraw &&
+    prediction.penaltyWinner != null &&
+    prediction.penaltyWinner === shootoutWinner;
 
-  const bonusPoints =
+  const rawBasePoints = basePoints;
+  const rawBonusPoints =
     (exactScore ? weights.exactScoreBonusPoints : 0) +
     (winnerGoals ? weights.winnerGoalsBonusPoints : 0) +
     (goalDifference ? weights.goalDifferenceBonusPoints : 0) +
@@ -190,10 +224,17 @@ export function calculatePredictionScore(
     (extraTime ? weights.extraTimeBonusPoints : 0) +
     (penalties ? weights.penaltiesBonusPoints : 0);
 
+  // Knockout matches are worth a configurable multiple. Apply it to both the
+  // base and the bonus so `points === basePoints + bonusPoints` still holds and
+  // the Base/Bônus breakdown reflects the doubling.
+  const multiplier = isKnockout ? weights.knockoutMultiplier : 1;
+  const finalBasePoints = rawBasePoints * multiplier;
+  const finalBonusPoints = rawBonusPoints * multiplier;
+
   return {
-    points: basePoints + bonusPoints,
-    basePoints,
-    bonusPoints,
+    points: finalBasePoints + finalBonusPoints,
+    basePoints: finalBasePoints,
+    bonusPoints: finalBonusPoints,
     exactScore,
     correctWinner,
     correctDraw,

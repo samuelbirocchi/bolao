@@ -37,6 +37,7 @@ export type MatchWithPrediction = {
   status: string;
   prediction_home_goals: number | null;
   prediction_away_goals: number | null;
+  prediction_penalty_winner: "home" | "away" | null;
   result_home_goals: number | null;
   result_away_goals: number | null;
   result_home_penalties: number | null;
@@ -71,6 +72,7 @@ export type MatchRankingRow = {
   exact_score: boolean;
   correct_winner: boolean;
   correct_draw: boolean;
+  is_knockout: boolean;
   prediction_home_goals: number | null;
   prediction_away_goals: number | null;
   result_home_goals: number | null;
@@ -250,7 +252,7 @@ export async function getMatchesWithPredictions(
         .order("match_number", { ascending: true }),
       supabase
         .from("predictions")
-        .select("match_id, home_goals, away_goals")
+        .select("match_id, home_goals, away_goals, penalty_winner")
         .eq("group_id", groupId)
         .eq("user_id", userId),
       supabase
@@ -308,6 +310,10 @@ export async function getMatchesWithPredictions(
       ...match,
       prediction_home_goals: prediction?.home_goals ?? null,
       prediction_away_goals: prediction?.away_goals ?? null,
+      prediction_penalty_winner: (prediction?.penalty_winner ?? null) as
+        | "home"
+        | "away"
+        | null,
       result_home_goals: result?.home_goals ?? null,
       result_away_goals: result?.away_goals ?? null,
       result_home_penalties: result?.home_penalties ?? null,
@@ -342,20 +348,53 @@ export async function getLeaderboard(groupId: string): Promise<LeaderboardEntry[
   return (data ?? []) as LeaderboardEntry[];
 }
 
+const MATCH_PREDICTION_SCORE_COLUMNS =
+  "user_id, match_id, base_points, bonus_points, exact_score, correct_winner, correct_draw, is_knockout, prediction_home_goals, prediction_away_goals, result_home_goals, result_away_goals, winner_goals_bonus, goal_difference_bonus, loser_goals_bonus, rout_bonus, extra_time_bonus, penalties_bonus";
+
+// PostgREST caps an unbounded select at 1000 rows. A group's per-match scores are
+// members × completed matches, which exceeds 1000 for an active group — silently
+// dropping rows so some predictions render unscored. Page through every row with
+// a stable order so the full set is always returned.
+async function fetchAllMatchPredictionScores(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  groupId: string,
+): Promise<MatchRankingRow[]> {
+  const pageSize = 1000;
+  const rows: MatchRankingRow[] = [];
+
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from("match_prediction_scores")
+      .select(MATCH_PREDICTION_SCORE_COLUMNS)
+      .eq("group_id", groupId)
+      .order("match_id", { ascending: true })
+      .order("user_id", { ascending: true })
+      .range(from, from + pageSize - 1);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const page = (data ?? []) as MatchRankingRow[];
+    rows.push(...page);
+
+    if (page.length < pageSize) {
+      break;
+    }
+  }
+
+  return rows;
+}
+
 export async function getMatchRankingData(groupId: string): Promise<MatchRankingData> {
   if (!hasSupabaseEnv()) {
     return { scores: [], members: [], matches: [], lastUpdatedAt: null };
   }
 
   const supabase = await createClient();
-  const [{ data: scores }, members, { data: matches }, { data: results }, { data: settings }] =
+  const [scores, members, { data: matches }, { data: results }, { data: settings }] =
     await Promise.all([
-      supabase
-        .from("match_prediction_scores")
-        .select(
-          "user_id, match_id, base_points, bonus_points, exact_score, correct_winner, correct_draw, prediction_home_goals, prediction_away_goals, result_home_goals, result_away_goals, winner_goals_bonus, goal_difference_bonus, loser_goals_bonus, rout_bonus, extra_time_bonus, penalties_bonus",
-        )
-        .eq("group_id", groupId),
+      fetchAllMatchPredictionScores(supabase, groupId),
       getLeaderboard(groupId),
       supabase
         .from("matches")
@@ -387,7 +426,7 @@ export async function getMatchRankingData(groupId: string): Promise<MatchRanking
       : null;
 
   return {
-    scores: (scores ?? []) as MatchRankingRow[],
+    scores,
     members,
     matches: completedMatches as RankingMatchMeta[],
     lastUpdatedAt,
@@ -403,7 +442,7 @@ export async function getScoringSettings() {
   const { data } = await supabase
     .from("scoring_settings")
     .select(
-      "base_min_points, base_max_points, base_floor_probability, base_ceiling_probability, exact_score_bonus_points, winner_goals_bonus_points, goal_difference_bonus_points, loser_goals_bonus_points, rout_bonus_points, extra_time_bonus_points, penalties_bonus_points",
+      "base_min_points, base_max_points, base_floor_probability, base_ceiling_probability, exact_score_bonus_points, winner_goals_bonus_points, goal_difference_bonus_points, loser_goals_bonus_points, rout_bonus_points, extra_time_bonus_points, penalties_bonus_points, knockout_multiplier",
     )
     .eq("id", true)
     .single();
@@ -428,6 +467,8 @@ export async function getScoringSettings() {
       data?.extra_time_bonus_points ?? defaultScoreWeights.extraTimeBonusPoints,
     penaltiesBonusPoints:
       data?.penalties_bonus_points ?? defaultScoreWeights.penaltiesBonusPoints,
+    knockoutMultiplier:
+      data?.knockout_multiplier ?? defaultScoreWeights.knockoutMultiplier,
   };
 }
 
@@ -465,7 +506,7 @@ export async function getClosedMatchDetail(
   ] = await Promise.all([
     supabase
       .from("predictions")
-      .select("user_id, home_goals, away_goals")
+      .select("user_id, home_goals, away_goals, penalty_winner")
       .eq("group_id", groupId)
       .eq("match_id", matchId),
     supabase
@@ -566,6 +607,10 @@ export async function getClosedMatchDetail(
       ...match,
       prediction_home_goals: currentPrediction?.home_goals ?? null,
       prediction_away_goals: currentPrediction?.away_goals ?? null,
+      prediction_penalty_winner: (currentPrediction?.penalty_winner ?? null) as
+        | "home"
+        | "away"
+        | null,
       result_home_goals: currentResult?.home_goals ?? null,
       result_away_goals: currentResult?.away_goals ?? null,
       result_home_penalties: currentResult?.home_penalties ?? null,
