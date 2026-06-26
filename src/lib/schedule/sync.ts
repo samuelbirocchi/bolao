@@ -20,6 +20,7 @@ export async function syncExternalMatches(
   supabase: SyncSupabaseClient,
   externalMatches: ExternalMatch[],
   updatedBy: string | null,
+  resultMatches: ExternalMatch[] = externalMatches,
 ): Promise<Wc2026SyncSummary> {
   if (externalMatches.length === 0) {
     return {
@@ -42,7 +43,7 @@ export async function syncExternalMatches(
   const matchIdByNumber = new Map(
     matches.map((match) => [match.match_number as number, match.id as string]),
   );
-  const completedResults = buildCompletedResultRows(externalMatches, matchIdByNumber, updatedBy);
+  const completedResults = buildCompletedResultRows(resultMatches, matchIdByNumber, updatedBy);
 
   if (completedResults.length > 0) {
     const { error: resultError } = await supabase
@@ -86,25 +87,28 @@ export async function syncRecentWc2026Matches(now = new Date()) {
   }
 
   const externalMatches = await fetchWc2026Matches();
-  const selectedMatches = selectPostMatchSyncCandidates(externalMatches, now);
 
-  if (selectedMatches.length === 0) {
+  if (externalMatches.length === 0) {
     return {
-      fetchedCount: externalMatches.length,
+      fetchedCount: 0,
       selectedCount: 0,
       syncedMatchCount: 0,
       syncedResultCount: 0,
     };
   }
 
+  // Sync schedule rows for every match (so knockout placeholders resolve to real
+  // teams once the group stage ends), but only write results for recently
+  // played matches so the scheduler never clobbers admin-entered results.
+  const resultMatches = selectPostMatchSyncCandidates(externalMatches, now);
   const supabase = createServiceClient();
-  const summary = await syncExternalMatches(supabase, selectedMatches, null);
+  const summary = await syncExternalMatches(supabase, externalMatches, null, resultMatches);
   revalidateMatchSyncPaths();
 
   return {
     ...summary,
     fetchedCount: externalMatches.length,
-    selectedCount: selectedMatches.length,
+    selectedCount: resultMatches.length,
   };
 }
 
