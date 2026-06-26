@@ -117,6 +117,7 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
             breakdown.match.away_team_name,
           ),
           matchPoints: entry.matchPoints,
+          isKnockout: entry.isKnockout,
           rank: entry.rank,
           rankDelta: entry.rankDelta,
           predictionHomeGoals: entry.predictionHomeGoals,
@@ -285,6 +286,7 @@ export default async function LeaderboardPage({ params }: LeaderboardPageProps) 
                     criteriaLabels={criteriaLabels}
                     versusLabel={t.matches.versus}
                     noCriteriaLabel={t.ranking.noCriteria}
+                    knockoutBadgeLabel={`${scoring.knockoutMultiplier}×`}
                   />
                 </details>
               </article>

@@ -1048,6 +1048,31 @@ label {
   justify-self: center;
 }
 
+/* Knockout-only: pick the shootout winner in case the prediction is a draw. */
+.penalty-winner {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.1rem;
+  margin: 0.7rem 0 0;
+  padding: 0.6rem 0.8rem;
+}
+
+.penalty-winner legend {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0 0.3rem;
+}
+
+.penalty-winner-option {
+  align-items: center;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 0.4rem;
+}
+
 .prediction-stats-details {
   position: relative;
   z-index: 3;
@@ -1753,6 +1778,90 @@ label {
   display: block;
   font-size: 0.78rem;
   font-weight: 700;
+}
+
+/* Knockout 2× badge — reuses .criterion-pill, tinted differently. */
+.criterion-pill.knockout-pill {
+  background: rgba(217, 119, 6, 0.12);
+  border-color: rgba(217, 119, 6, 0.25);
+  color: #b45309;
+}
+
+/* Per-match "Pontos por jogo": stacked cards on mobile, table on wider screens.
+   The 6-column table overflows narrow phones and clips the right columns, so the
+   cards are the default and the table is revealed from 641px up. */
+.player-points-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.player-points-card {
+  background: var(--panel-solid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem 0.9rem;
+}
+
+.player-points-card .ppc-head {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.5rem;
+}
+
+.player-points-card .player-points-match {
+  color: var(--brand-strong);
+  font-weight: 900;
+}
+
+.player-points-card .ppc-stats {
+  display: grid;
+  gap: 0.5rem 0.9rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0.6rem 0 0;
+}
+
+.player-points-card .ppc-stats div {
+  align-items: baseline;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.player-points-card .ppc-stats dt {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.player-points-card .ppc-stats dd {
+  color: var(--brand-strong);
+  font-weight: 900;
+  margin: 0;
+}
+
+.player-points-card .ppc-criteria {
+  margin-top: 0.6rem;
+}
+
+.player-points-scroll {
+  display: none;
+}
+
+@media (min-width: 641px) {
+  .player-points-cards {
+    display: none;
+  }
+
+  .player-points-scroll {
+    display: block;
+  }
 }
 
 .perf-detail {

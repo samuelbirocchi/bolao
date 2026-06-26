@@ -9,9 +9,33 @@ test("keeps valid pairs as parsed integers", () => {
       { matchId: "b", home: "0", away: "0" },
     ]),
     [
-      { matchId: "a", homeGoals: 2, awayGoals: 1 },
-      { matchId: "b", homeGoals: 0, awayGoals: 0 },
+      { matchId: "a", homeGoals: 2, awayGoals: 1, penaltyWinner: null },
+      { matchId: "b", homeGoals: 0, awayGoals: 0, penaltyWinner: null },
     ],
+  );
+});
+
+test("keeps the penalty winner only for a draw prediction", () => {
+  assert.deepEqual(
+    buildPredictionEntries([
+      // Draw → the shootout pick is retained.
+      { matchId: "a", home: "1", away: "1", penaltyWinner: "home" },
+      // Not a draw → the shootout pick is dropped.
+      { matchId: "b", home: "2", away: "1", penaltyWinner: "away" },
+      // Draw with no pick → null.
+      { matchId: "c", home: "0", away: "0", penaltyWinner: "" },
+    ]),
+    [
+      { matchId: "a", homeGoals: 1, awayGoals: 1, penaltyWinner: "home" },
+      { matchId: "b", homeGoals: 2, awayGoals: 1, penaltyWinner: null },
+      { matchId: "c", homeGoals: 0, awayGoals: 0, penaltyWinner: null },
+    ],
+  );
+});
+
+test("rejects an invalid penalty winner on a draw", () => {
+  assert.throws(() =>
+    buildPredictionEntries([{ matchId: "a", home: "1", away: "1", penaltyWinner: "neither" }]),
   );
 });
 

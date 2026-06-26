@@ -18,7 +18,7 @@ import {
   isMatchLocked,
   splitMatchesByKickoff,
 } from "@/lib/matches";
-import { calculateBasePoints, type ScoreWeights } from "@/lib/scoring";
+import { calculateBasePoints, isKnockoutMatch, type ScoreWeights } from "@/lib/scoring";
 
 type MatchesPageProps = {
   params: Promise<{ groupId: string }>;
@@ -430,6 +430,30 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
               </span>
             ) : null}
           </div>
+
+          {!locked && isKnockoutMatch(match.match_number) ? (
+            <fieldset className="penalty-winner">
+              <legend>{t.matches.penaltyWinnerPrompt}</legend>
+              <label className="penalty-winner-option">
+                <input
+                  defaultChecked={match.prediction_penalty_winner === "home"}
+                  name={`penalty-${match.id}`}
+                  type="radio"
+                  value="home"
+                />
+                <TeamName canonicalName={match.home_team_name} name={homeName} />
+              </label>
+              <label className="penalty-winner-option">
+                <input
+                  defaultChecked={match.prediction_penalty_winner === "away"}
+                  name={`penalty-${match.id}`}
+                  type="radio"
+                  value="away"
+                />
+                <TeamName canonicalName={match.away_team_name} name={awayName} />
+              </label>
+            </fieldset>
+          ) : null}
         </div>
 
         {locked ? <span className="match-card-cta">{t.matches.viewLivePicks}</span> : null}

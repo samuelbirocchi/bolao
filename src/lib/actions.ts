@@ -14,7 +14,7 @@ import { LOCALE_COOKIE, isLocale } from "@/lib/i18n";
 import { redeemInviteCode } from "@/lib/invites";
 import { assertNotOwner } from "@/lib/membership";
 import { buildOddsSnapshots, fetchWorldCupOdds } from "@/lib/odds";
-import { buildPredictionEntries } from "@/lib/predictions";
+import { buildPredictionEntries, parsePenaltyWinner } from "@/lib/predictions";
 import { pathWithSaveFeedback } from "@/lib/saveFeedback";
 import { syncWc2026MatchesForAdmin } from "@/lib/schedule/sync";
 import { configuredSiteOriginFromEnv, normalizeOrigin } from "@/lib/siteOrigin";
@@ -300,6 +300,11 @@ export async function savePredictionAction(formData: FormData) {
   const matchId = readString(formData, "matchId");
   const homeGoals = readInteger(formData, "homeGoals");
   const awayGoals = readInteger(formData, "awayGoals");
+  const penaltyWinner = parsePenaltyWinner(
+    readString(formData, "penaltyWinner"),
+    homeGoals === awayGoals,
+    matchId,
+  );
 
   const supabase = await createClient();
   const { data: match } = await supabase
@@ -319,6 +324,7 @@ export async function savePredictionAction(formData: FormData) {
       user_id: user.id,
       home_goals: homeGoals,
       away_goals: awayGoals,
+      penalty_winner: penaltyWinner,
     },
     { onConflict: "group_id,user_id,match_id" },
   );
@@ -345,6 +351,7 @@ export async function saveAllPredictionsAction(formData: FormData) {
       matchId,
       home: readString(formData, `home-${matchId}`),
       away: readString(formData, `away-${matchId}`),
+      penaltyWinner: readString(formData, `penalty-${matchId}`),
     })),
   );
 
@@ -376,6 +383,7 @@ export async function saveAllPredictionsAction(formData: FormData) {
       user_id: user.id,
       home_goals: entry.homeGoals,
       away_goals: entry.awayGoals,
+      penalty_winner: entry.penaltyWinner,
     }));
 
   if (rows.length === 0) {
@@ -413,6 +421,11 @@ export async function updateScoringSettingsAction(formData: FormData) {
   const routBonusPoints = readInteger(formData, "routBonusPoints");
   const extraTimeBonusPoints = readInteger(formData, "extraTimeBonusPoints");
   const penaltiesBonusPoints = readInteger(formData, "penaltiesBonusPoints");
+  const knockoutMultiplier = readInteger(formData, "knockoutMultiplier");
+
+  if (knockoutMultiplier < 1) {
+    throw new Error("Knockout multiplier must be at least 1.");
+  }
 
   const supabase = await createClient();
   const { error } = await supabase.from("scoring_settings").upsert({
@@ -428,6 +441,7 @@ export async function updateScoringSettingsAction(formData: FormData) {
     rout_bonus_points: routBonusPoints,
     extra_time_bonus_points: extraTimeBonusPoints,
     penalties_bonus_points: penaltiesBonusPoints,
+    knockout_multiplier: knockoutMultiplier,
     updated_by: user.id,
     updated_at: new Date().toISOString(),
   });

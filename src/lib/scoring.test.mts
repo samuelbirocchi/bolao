@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  KNOCKOUT_START_MATCH_NUMBER,
   calculateBasePoints,
   calculatePredictionScore,
   defaultScoreWeights,
+  isKnockoutMatch,
 } from "./scoring.ts";
 
 test("probability base score is linear, rounded, and clamped", () => {
@@ -87,7 +89,7 @@ test("rout and extra-time bonuses can coexist with exact score", () => {
   );
 });
 
-test("penalty shootout resolves tied goals to the shootout winner", () => {
+test("penalty match is a draw on goals: a winner-pick scores nothing", () => {
   const score = calculatePredictionScore(
     { homeGoals: 2, awayGoals: 1 },
     {
@@ -101,9 +103,123 @@ test("penalty shootout resolves tied goals to the shootout winner", () => {
     null,
   );
 
-  assert.equal(score.correctWinner, true);
-  assert.equal(score.basePoints, defaultScoreWeights.baseMinPoints);
+  // 1-1 (level on goals) is a draw; predicting 2-1 is the wrong outcome.
+  assert.equal(score.correctWinner, false);
+  assert.equal(score.correctDraw, false);
+  assert.equal(score.penalties, false);
+  assert.equal(score.points, 0);
+});
+
+test("penalty match: draw prediction with correct shootout pick earns base + penalties bonus", () => {
+  const score = calculatePredictionScore(
+    { homeGoals: 2, awayGoals: 2, penaltyWinner: "home" },
+    {
+      homeGoals: 1,
+      awayGoals: 1,
+      homePenalties: 5,
+      awayPenalties: 4,
+      resolution: "penalties",
+    },
+    defaultScoreWeights,
+    { homeWinProbability: 0.4, drawProbability: 0.2, awayWinProbability: 0.4 },
+  );
+
+  assert.equal(score.correctDraw, true);
   assert.equal(score.penalties, true);
+  assert.equal(score.basePoints, calculateBasePoints(0.2, defaultScoreWeights));
+  // Non-exact draw with matching goal difference (0) + correct shootout pick.
+  assert.equal(
+    score.bonusPoints,
+    defaultScoreWeights.goalDifferenceBonusPoints + defaultScoreWeights.penaltiesBonusPoints,
+  );
+});
+
+test("penalty match: draw prediction with wrong shootout pick earns no penalties bonus", () => {
+  const score = calculatePredictionScore(
+    { homeGoals: 2, awayGoals: 2, penaltyWinner: "away" },
+    {
+      homeGoals: 1,
+      awayGoals: 1,
+      homePenalties: 5,
+      awayPenalties: 4,
+      resolution: "penalties",
+    },
+    defaultScoreWeights,
+    { homeWinProbability: 0.4, drawProbability: 0.2, awayWinProbability: 0.4 },
+  );
+
+  assert.equal(score.correctDraw, true);
+  assert.equal(score.penalties, false);
+  assert.equal(score.bonusPoints, defaultScoreWeights.goalDifferenceBonusPoints);
+});
+
+test("penalty match: draw prediction without a shootout pick earns no penalties bonus", () => {
+  const score = calculatePredictionScore(
+    { homeGoals: 2, awayGoals: 2 },
+    {
+      homeGoals: 1,
+      awayGoals: 1,
+      homePenalties: 5,
+      awayPenalties: 4,
+      resolution: "penalties",
+    },
+    defaultScoreWeights,
+    { homeWinProbability: 0.4, drawProbability: 0.2, awayWinProbability: 0.4 },
+  );
+
+  assert.equal(score.correctDraw, true);
+  assert.equal(score.penalties, false);
+  assert.equal(score.bonusPoints, defaultScoreWeights.goalDifferenceBonusPoints);
+});
+
+test("knockout matches double the whole score (base + bonuses)", () => {
+  const prediction = { homeGoals: 2, awayGoals: 1 };
+  const result = { homeGoals: 2, awayGoals: 1, resolution: "regular" as const };
+  const probabilities = {
+    homeWinProbability: 0.5,
+    drawProbability: 0.25,
+    awayWinProbability: 0.25,
+  };
+
+  const group = calculatePredictionScore(prediction, result, defaultScoreWeights, probabilities, false);
+  const knockout = calculatePredictionScore(prediction, result, defaultScoreWeights, probabilities, true);
+
+  assert.ok(group.points > 0);
+  assert.equal(knockout.basePoints, group.basePoints * defaultScoreWeights.knockoutMultiplier);
+  assert.equal(knockout.bonusPoints, group.bonusPoints * defaultScoreWeights.knockoutMultiplier);
+  assert.equal(knockout.points, group.points * defaultScoreWeights.knockoutMultiplier);
+  assert.equal(knockout.points, knockout.basePoints + knockout.bonusPoints);
+});
+
+test("knockout multiplier is configurable and a multiplier of 1 is a no-op", () => {
+  const prediction = { homeGoals: 2, awayGoals: 1 };
+  const result = { homeGoals: 2, awayGoals: 1, resolution: "regular" as const };
+
+  const group = calculatePredictionScore(prediction, result, defaultScoreWeights, null, false);
+  const tripled = calculatePredictionScore(
+    prediction,
+    result,
+    { ...defaultScoreWeights, knockoutMultiplier: 3 },
+    null,
+    true,
+  );
+  const noop = calculatePredictionScore(
+    prediction,
+    result,
+    { ...defaultScoreWeights, knockoutMultiplier: 1 },
+    null,
+    true,
+  );
+
+  assert.equal(tripled.points, group.points * 3);
+  assert.equal(noop.points, group.points);
+});
+
+test("isKnockoutMatch keys off match number 73", () => {
+  assert.equal(KNOCKOUT_START_MATCH_NUMBER, 73);
+  assert.equal(isKnockoutMatch(72), false);
+  assert.equal(isKnockoutMatch(73), true);
+  assert.equal(isKnockoutMatch(104), true);
 });
 
 test("draw prediction with different scoreline earns base points and goal-difference bonus", () => {
