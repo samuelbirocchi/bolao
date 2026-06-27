@@ -1,0 +1,25 @@
+name: Sync WC2026 matches
+
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: wc2026-match-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Sync matches and results
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl --fail-with-body --show-error --silent --max-time 120 \
+            --header "Authorization: Bearer ${CRON_SECRET}" \
+            https://bolao.samuelbirocchi.com/api/cron/sync-matches

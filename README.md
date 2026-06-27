@@ -68,9 +68,9 @@ PWA-first World Cup sweepstakes app for private groups of friends.
    - Use `/admin/matches` to sync credential-free ESPN match data, including
      phases, extra-time state, and penalties
    - For automatic post-match sync, also set `SUPABASE_SERVICE_ROLE_KEY`; the
-     service starts an in-process scheduler that syncs every 15 minutes.
-   - Set `CRON_SECRET` only if you want to protect the manual
-     `/api/cron/sync-matches` endpoint for external invocations.
+     GitHub Actions workflow calls the protected sync endpoint every 15 minutes.
+   - Set the same `CRON_SECRET` in Vercel Production and the GitHub repository
+     Actions secrets. The workflow can also be triggered manually.
    - If `ODDS_API_KEY` is also set, the scheduler automatically syncs
      pre-kickoff odds alongside match results. Odds can also be synced manually
      from `/admin/matches`.
@@ -97,7 +97,7 @@ Optional:
 
 - `NEXT_PUBLIC_SITE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `CRON_SECRET` (manual `/api/cron/sync-matches` endpoint only)
+- `CRON_SECRET` (scheduled and manual `/api/cron/sync-matches` endpoint)
 - `ODDS_API_KEY`
 - `ODDS_API_BASE_URL`
 - `ODDS_API_REGIONS`

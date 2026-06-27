@@ -38,12 +38,13 @@ production emails do not accidentally inherit a local development origin. Becaus
 `NEXT_PUBLIC_*` values are embedded at build time, redeploy after changing either
 public variable.
 
-`SUPABASE_SERVICE_ROLE_KEY` is used by the service-side scheduler and manual
-cron route so they can write match fixtures, final results, and odds snapshots
-without an interactive admin session. Keep it secret and never expose it with a
-`NEXT_PUBLIC_` prefix. `CRON_SECRET` only protects the manual
-`/api/cron/sync-matches` endpoint for external invocations. If `ODDS_API_KEY` is
-also set, the service-side scheduler automatically syncs pre-kickoff odds.
+`SUPABASE_SERVICE_ROLE_KEY` is used by the scheduled and manual sync route so it
+can write match fixtures, final results, and odds snapshots without an
+interactive admin session. Keep it secret and never expose it with a
+`NEXT_PUBLIC_` prefix. Set the same `CRON_SECRET` as a GitHub Actions repository
+secret so `.github/workflows/sync-wc2026.yml` can call the protected endpoint
+every 15 minutes. If `ODDS_API_KEY` is also set, the route also syncs pre-kickoff
+odds.
 Match fixtures and results come from ESPN's credential-free World Cup
 scoreboard, so no match-data API key is required.
 
@@ -104,7 +105,8 @@ After deployment, open the production URL and verify:
 - Group list and individual group pages load.
 - Admin pages load for the promoted global admin user.
 - WC2026 sync runs from `/admin/matches`.
-- Post-match WC2026 sync runs every 15 minutes from the service-side scheduler.
+- The `Sync WC2026 matches` GitHub Actions workflow succeeds and its production
+  endpoint response reports synced matches/results.
 - The manual cron endpoint runs from `/api/cron/sync-matches` when called with
   `Authorization: Bearer <CRON_SECRET>`.
 - Odds sync runs from `/admin/matches`.
