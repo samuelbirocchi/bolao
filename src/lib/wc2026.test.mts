@@ -2,73 +2,192 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { fetchWc2026Matches } from "./schedule/wc2026.ts";
 
-const originalApiKey = process.env.WC2026_API_KEY;
-const originalBaseUrl = process.env.WC2026_API_BASE_URL;
 const originalFetch = globalThis.fetch;
 
-function restoreEnv(name: "WC2026_API_KEY" | "WC2026_API_BASE_URL", value: string | undefined) {
-  if (value === undefined) {
-    delete process.env[name];
-    return;
-  }
+type TeamInput = {
+  name: string;
+  active?: boolean;
+  score?: string;
+  shootoutScore?: string;
+};
 
-  process.env[name] = value;
+function competitor(homeAway: "home" | "away", team: TeamInput) {
+  return {
+    homeAway,
+    score: team.score ?? "0",
+    shootoutScore: team.shootoutScore,
+    team: {
+      displayName: team.name,
+      isActive: team.active ?? true,
+    },
+  };
 }
 
-function mockMatchesResponse(payload: unknown) {
-  process.env.WC2026_API_KEY = "test-key";
-  process.env.WC2026_API_BASE_URL = "https://wc2026.example";
-  globalThis.fetch = async () =>
-    new Response(JSON.stringify(payload), {
-      status: 200,
+function event({
+  id,
+  home,
+  away,
+  state = "pre",
+  completed = false,
+  statusName = "STATUS_SCHEDULED",
+  period,
+}: {
+  id: string;
+  home: TeamInput;
+  away: TeamInput;
+  state?: "pre" | "in" | "post";
+  completed?: boolean;
+  statusName?: string;
+  period?: number;
+}) {
+  const status = {
+    period,
+    type: {
+      state,
+      completed,
+      name: statusName,
+      detail: completed ? "Full Time" : "Scheduled",
+      shortDetail: completed ? "FT" : "Scheduled",
+    },
+  };
+
+  return {
+    id,
+    date: "2026-06-11T19:00Z",
+    season: { slug: "group-stage" },
+    status,
+    competitions: [
+      {
+        status,
+        competitors: [competitor("home", home), competitor("away", away)],
+        venue: { fullName: "Estadio Azteca" },
+        altGameNote: "FIFA World Cup, Group A",
+      },
+    ],
+  };
+}
+
+function mockScoreboard(events: unknown[], status = 200) {
+  let requestedUrl = "";
+  let requestedInit: RequestInit | undefined;
+  globalThis.fetch = async (input, init) => {
+    requestedUrl = String(input);
+    requestedInit = init;
+    return new Response(JSON.stringify({ events }), {
+      status,
       headers: { "content-type": "application/json" },
     });
+  };
+
+  return {
+    requestedUrl: () => requestedUrl,
+    requestedInit: () => requestedInit,
+  };
 }
 
 afterEach(() => {
-  restoreEnv("WC2026_API_KEY", originalApiKey);
-  restoreEnv("WC2026_API_BASE_URL", originalBaseUrl);
   globalThis.fetch = originalFetch;
 });
 
-test("fetchWc2026Matches prefers final goals over stale score fields", async () => {
-  mockMatchesResponse([
-    {
-      id: 2,
-      round: "group",
-      home_team: "Brazil",
-      away_team: "Serbia",
-      kickoff_utc: "2026-06-13T20:00:00Z",
-      status: "completed",
-      home_score: 0,
-      away_score: 1,
-      home_goals: 2,
-      away_goals: 1,
-    },
+test("fetchWc2026Matches maps ESPN fixtures to stable official match numbers", async () => {
+  const request = mockScoreboard([
+    event({
+      id: "760415",
+      home: { name: "Mexico" },
+      away: { name: "South Africa" },
+    }),
   ]);
 
   const [match] = await fetchWc2026Matches();
 
-  assert.equal(match.resultHomeGoals, 2);
-  assert.equal(match.resultAwayGoals, 1);
+  assert.equal(match.matchNumber, 1);
+  assert.equal(match.round, "group-stage");
+  assert.equal(match.groupName, "A");
+  assert.equal(match.homeTeamName, "Mexico");
+  assert.equal(match.awayTeamName, "South Africa");
+  assert.equal(match.stadium, "Estadio Azteca");
+  assert.equal(match.status, "scheduled");
+  assert.equal(match.resultHomeGoals, null);
+  assert.equal(match.resultAwayGoals, null);
+  assert.match(request.requestedUrl(), /dates=20260611-20260719/);
+  assert.match(request.requestedUrl(), /limit=200/);
+  assert.equal(request.requestedInit()?.headers, undefined);
 });
 
-test("fetchWc2026Matches falls back to score fields when final goals are missing", async () => {
-  mockMatchesResponse([
-    {
-      id: 3,
-      round: "group",
-      home_team: "Mexico",
-      away_team: "Canada",
-      kickoff_utc: "2026-06-14T20:00:00Z",
-      status: "completed",
-      home_score: 1,
-      away_score: 0,
-    },
+test("fetchWc2026Matches separates unresolved knockout placeholders from teams", async () => {
+  mockScoreboard([
+    event({
+      id: "760495",
+      home: { name: "Group L Winner", active: false },
+      away: { name: "Third Place Group E/H/I/J/K", active: false },
+    }),
   ]);
 
   const [match] = await fetchWc2026Matches();
 
-  assert.equal(match.resultHomeGoals, 1);
-  assert.equal(match.resultAwayGoals, 0);
+  assert.equal(match.matchNumber, 80);
+  assert.equal(match.homeTeamName, null);
+  assert.equal(match.homeTeamPlaceholder, "Group L Winner");
+  assert.equal(match.awayTeamName, null);
+  assert.equal(match.awayTeamPlaceholder, "Third Place Group E/H/I/J/K");
+});
+
+test("fetchWc2026Matches maps live scores and penalty shootouts", async () => {
+  mockScoreboard([
+    event({
+      id: "760502",
+      home: { name: "Brazil", score: "1", shootoutScore: "4" },
+      away: { name: "Mexico", score: "1", shootoutScore: "3" },
+      state: "post",
+      completed: true,
+      statusName: "STATUS_FULL_TIME",
+      period: 5,
+    }),
+    event({
+      id: "760486",
+      home: { name: "South Africa", score: "2" },
+      away: { name: "Canada", score: "1" },
+      state: "in",
+      statusName: "STATUS_IN_PROGRESS",
+      period: 2,
+    }),
+  ]);
+
+  const [live, completed] = await fetchWc2026Matches();
+
+  assert.equal(live.matchNumber, 73);
+  assert.equal(live.status, "live");
+  assert.equal(live.resultHomeGoals, 2);
+  assert.equal(live.resultAwayGoals, 1);
+  assert.equal(completed.matchNumber, 90);
+  assert.equal(completed.status, "completed");
+  assert.equal(completed.resultHomeGoals, 1);
+  assert.equal(completed.resultAwayGoals, 1);
+  assert.equal(completed.resultHomePenalties, 4);
+  assert.equal(completed.resultAwayPenalties, 3);
+  assert.equal(completed.resultResolution, "penalties");
+});
+
+test("fetchWc2026Matches fails closed for an unknown ESPN event", async () => {
+  mockScoreboard([
+    event({
+      id: "999999",
+      home: { name: "Mexico" },
+      away: { name: "South Africa" },
+    }),
+  ]);
+
+  await assert.rejects(fetchWc2026Matches(), /unknown WC2026 event id: 999999/);
+});
+
+test("fetchWc2026Matches reports ESPN HTTP failures", async () => {
+  mockScoreboard([], 503);
+
+  await assert.rejects(fetchWc2026Matches(), /ESPN WC2026 scoreboard returned 503/);
+});
+
+test("fetchWc2026Matches rejects an empty scoreboard", async () => {
+  mockScoreboard([]);
+
+  await assert.rejects(fetchWc2026Matches(), /scoreboard returned no events/);
 });

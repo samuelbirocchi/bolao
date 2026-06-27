@@ -25,8 +25,6 @@ Add these variables in Vercel for the **Production** environment:
 - `NEXT_PUBLIC_SITE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `CRON_SECRET`
-- `WC2026_API_KEY`
-- `WC2026_API_BASE_URL`
 - `ODDS_API_KEY`
 - `ODDS_API_BASE_URL`
 - `ODDS_API_REGIONS`
@@ -46,6 +44,8 @@ without an interactive admin session. Keep it secret and never expose it with a
 `NEXT_PUBLIC_` prefix. `CRON_SECRET` only protects the manual
 `/api/cron/sync-matches` endpoint for external invocations. If `ODDS_API_KEY` is
 also set, the service-side scheduler automatically syncs pre-kickoff odds.
+Match fixtures and results come from ESPN's credential-free World Cup
+scoreboard, so no match-data API key is required.
 
 ## Preview environment variables
 

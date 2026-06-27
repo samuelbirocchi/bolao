@@ -17,8 +17,7 @@ type SchedulerGlobal = typeof globalThis & {
 function hasSchedulerEnvironment() {
   return Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.SUPABASE_SERVICE_ROLE_KEY &&
-      process.env.WC2026_API_KEY,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
   );
 }
 
@@ -31,7 +30,7 @@ export function startWc2026SyncScheduler(logger: Logger = console) {
 
   if (!hasSchedulerEnvironment()) {
     logger.info(
-      "WC2026 sync scheduler not started because WC2026/Supabase service env is incomplete.",
+      "WC2026 sync scheduler not started because the Supabase service env is incomplete.",
     );
     return null;
   }

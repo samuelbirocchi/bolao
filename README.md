@@ -65,9 +65,8 @@ PWA-first World Cup sweepstakes app for private groups of friends.
 
 6. Optional fixture and odds sync:
 
-   - Request a key from `https://www.wc2026api.com/`
-   - Set `WC2026_API_KEY`
-   - Use `/admin/matches` to sync matches, phases, extra-time state, and penalties
+   - Use `/admin/matches` to sync credential-free ESPN match data, including
+     phases, extra-time state, and penalties
    - For automatic post-match sync, also set `SUPABASE_SERVICE_ROLE_KEY`; the
      service starts an in-process scheduler that syncs every 15 minutes.
    - Set `CRON_SECRET` only if you want to protect the manual
@@ -99,8 +98,6 @@ Optional:
 - `NEXT_PUBLIC_SITE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `CRON_SECRET` (manual `/api/cron/sync-matches` endpoint only)
-- `WC2026_API_KEY`
-- `WC2026_API_BASE_URL`
 - `ODDS_API_KEY`
 - `ODDS_API_BASE_URL`
 - `ODDS_API_REGIONS`
