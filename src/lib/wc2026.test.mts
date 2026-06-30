@@ -7,8 +7,8 @@ const originalFetch = globalThis.fetch;
 type TeamInput = {
   name: string;
   active?: boolean;
-  score?: string;
-  shootoutScore?: string;
+  score?: string | number;
+  shootoutScore?: string | number;
 };
 
 function competitor(homeAway: "home" | "away", team: TeamInput) {
@@ -136,8 +136,8 @@ test("fetchWc2026Matches maps live scores and penalty shootouts", async () => {
   mockScoreboard([
     event({
       id: "760502",
-      home: { name: "Brazil", score: "1", shootoutScore: "4" },
-      away: { name: "Mexico", score: "1", shootoutScore: "3" },
+      home: { name: "Brazil", score: "1", shootoutScore: 4 },
+      away: { name: "Mexico", score: "1", shootoutScore: 3 },
       state: "post",
       completed: true,
       statusName: "STATUS_FULL_TIME",

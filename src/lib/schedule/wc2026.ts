@@ -11,8 +11,8 @@ type EspnTeam = {
 
 type EspnCompetitor = {
   homeAway?: "home" | "away";
-  score?: string;
-  shootoutScore?: string;
+  score?: string | number | null;
+  shootoutScore?: string | number | null;
   team?: EspnTeam;
 };
 
@@ -65,8 +65,8 @@ function normalizeStatus(status: EspnStatus | undefined): ExternalMatch["status"
   return "scheduled";
 }
 
-function score(value: string | undefined) {
-  if (value === undefined || value.trim() === "") {
+function score(value: string | number | null | undefined) {
+  if (value === undefined || value === null || value === "") {
     return null;
   }
 
