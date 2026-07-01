@@ -16,7 +16,7 @@ export function normalizeTeamName(name: string | null | undefined) {
 }
 
 const ALIASES: Record<string, string[]> = {
-  "bosnia and herzegovina": ["bosnia", "bosnia & herzegovina"],
+  "bosnia and herzegovina": ["bosnia", "bosnia & herzegovina", "bosnia-herzegovina"],
   "cape verde": ["cabo verde"],
   "congo dr": ["dr congo", "drc", "democratic republic of the congo"],
   "czechia": ["czech republic"],

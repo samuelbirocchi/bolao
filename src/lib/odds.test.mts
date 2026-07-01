@@ -182,6 +182,48 @@ test("buildOddsSnapshots matches teams via Korea Republic alias", () => {
   assert.equal(result.unmatchedMatches.length, 0);
 });
 
+test("buildOddsSnapshots matches Bosnia-Herzegovina via alias", () => {
+  const result = buildOddsSnapshots(
+    [
+      {
+        id: "match-81",
+        home_team_name: "United States",
+        away_team_name: "Bosnia-Herzegovina",
+        kickoff_utc: kickoff,
+      },
+    ],
+    [
+      {
+        id: "event-81",
+        home_team: "USA",
+        away_team: "Bosnia & Herzegovina",
+        commence_time: kickoff,
+        bookmakers: [
+          {
+            key: "book",
+            title: "Book",
+            last_update: kickoff,
+            markets: [
+              {
+                key: "h2h",
+                outcomes: [
+                  { name: "USA", price: 1.5 },
+                  { name: "Draw", price: 4 },
+                  { name: "Bosnia & Herzegovina", price: 8 },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  );
+
+  assert.equal(result.matchedCount, 1);
+  assert.equal(result.unmatchedMatches.length, 0);
+  assert.equal(result.unmatchedEvents.length, 0);
+});
+
 test("buildOddsSnapshots reports unmatched matches and events", () => {
   const result = buildOddsSnapshots(
     [
